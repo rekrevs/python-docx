@@ -34,42 +34,51 @@ python-docx currently provides a **high-level API for common operations**:
 | Comments | ✅ | ✅ | ✅ |
 | Core properties | ✅ | ✅ | ✅ |
 
-### What's Missing (The Gap)
+### What's Now Implemented (WOTAN Extensions)
 
-These elements exist in real documents but are **opaque** to python-docx:
+These elements are now accessible through the extended API:
 
 | Element | In Test Docs | Read | Modify | Create |
 |---------|--------------|------|--------|--------|
-| **Fields** (TOC, page#, cross-ref) | 1299 | ❌ | ❌ | ❌ |
-| **Content Controls** (SDT) | 63 | ❌ | ❌ | ❌ |
-| **Bookmarks** | 348 | ❌ | ❌ | ❌ |
-| **Footnotes/Endnotes** | 14 | ❌ | ❌ | ❌ |
-| **Track Changes** | 43 | ❌ | ❌ | ❌ |
-| **Floating shapes** | ? | ⚠️ | ❌ | ❌ |
-| **Text boxes** | ? | ❌ | ❌ | ❌ |
-| **Math equations** | ? | ❌ | ❌ | ❌ |
-| **Charts** | ? | 🔍 | ❌ | ❌ |
-| **SmartArt** | ? | 🔍 | ❌ | ❌ |
-| **Custom XML** | ? | ❌ | ❌ | ❌ |
-| **Numbering definitions** | many | ✅ | ⚠️ | ❌ |
+| **Fields** (TOC, page#, cross-ref) | 1299 | ✅ | ⚠️ | ✅ |
+| **Content Controls** (SDT) | 63 | ✅ | ✅ | ✅ |
+| **Bookmarks** | 348 | ✅ | ❌ | ✅ |
+| **Footnotes/Endnotes** | 14 | ✅ | ✅ | ✅ |
+| **Track Changes** | 43 | ✅ | ✅ | ❌ |
+| **Floating shapes** | 86+ | ✅ | ⚠️ | ✅ |
+| **Text boxes** | 3+ | ✅ | ✅ | ❌ |
+| **Theme colors/fonts** | all | ✅ | ✅ | ❌ |
+| **SVG images** | ? | ✅ | ❌ | ❌ |
+| **Conformance detection** | n/a | ✅ | n/a | n/a |
+
+### Remaining Gaps
+
+| Element | Read | Modify | Create |
+|---------|------|--------|--------|
+| **Math equations** | ❌ | ❌ | ❌ |
+| **Charts** | 🔍 | ❌ | ❌ |
+| **SmartArt** | 🔍 | ❌ | ❌ |
+| **Custom XML** | ❌ | ❌ | ❌ |
+| **Text box creation** | n/a | n/a | ❌ |
+| **Bookmark modification** | n/a | ❌ | n/a |
 
 **Legend**: ✅ Full | ⚠️ Partial | 🔍 Detect only | ❌ None
 
 ### The Preservation Behavior
 
-Currently, python-docx **preserves** unsupported elements during round-trip:
+python-docx **preserves** all elements during round-trip:
 ```python
 doc = Document('complex.docx')  # Has fields, SDT, bookmarks...
 doc.add_paragraph('New text')
-doc.save('output.docx')  # Fields, SDT, bookmarks still there!
+doc.save('output.docx')  # Everything still there!
 ```
 
-This is good for safety but bad for control — you can't:
-- Read what a field contains
-- Modify a content control's value
-- Navigate to a bookmark
-- Accept/reject a tracked change
-- Extract footnote text
+With WOTAN extensions, you can now:
+- ✅ Read what a field contains (`doc.fields`)
+- ✅ Modify a content control's value (`doc.content_controls`)
+- ✅ Navigate to a bookmark (`doc.bookmarks`)
+- ✅ Accept/reject a tracked change (`doc.revisions`)
+- ✅ Extract footnote text (`doc.footnotes`)
 
 ## What "Complete" Means
 

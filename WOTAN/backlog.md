@@ -307,6 +307,53 @@ Implemented three new properties on Document class:
 
 ## Tier 4: Remaining Gaps
 
+### B-FLD-04: Field Modification `[READY]`
+
+**Intent:** Enable modifying existing fields.
+
+**Details:**
+Current state: Can read fields and create new ones, but cannot modify existing fields.
+
+Needed:
+- `field.field_code = "NEW CODE"` - Change field instruction
+- `field.update()` - Trigger field update (may require Word)
+- `field.delete()` - Remove field from document
+- `field.convert_to_text()` - Replace field with its current result
+
+**Acceptance Criteria:**
+- Modify field code of simple fields
+- Delete fields (both simple and complex)
+- Convert field to static text
+- Handle complex field modification (begin/separate/end structure)
+
+---
+
+### B-DRW-08: Floating Shape Modification `[READY]`
+
+**Intent:** Enable modifying properties of existing floating shapes.
+
+**Details:**
+Current state: Can read floating shape properties and create new ones, but all properties are read-only.
+
+Needed:
+- `shape.width = Inches(2)` - Resize width
+- `shape.height = Inches(3)` - Resize height
+- `shape.pos_x = Inches(1)` - Move horizontally
+- `shape.pos_y = Inches(2)` - Move vertically
+- `shape.name = "New Name"` - Rename shape
+- `shape.wrap_type = "tight"` - Change text wrapping
+- `shape.is_behind_text = True` - Move behind/in front of text
+- `shape.delete()` - Remove shape from document
+
+**Acceptance Criteria:**
+- Resize floating shapes
+- Reposition floating shapes
+- Change wrap style
+- Change z-order (behind/in front)
+- Delete floating shapes
+
+---
+
 ### B-DRW-06: Text Box Creation `[READY]`
 
 **Intent:** Enable creating new text boxes programmatically.

@@ -27,7 +27,194 @@ if TYPE_CHECKING:
 
 
 class CT_Anchor(BaseOxmlElement):
-    """`<wp:anchor>` element, container for a "floating" shape."""
+    """`<wp:anchor>` element, container for a "floating" shape.
+
+    Floating shapes are positioned relative to page, margin, column, or paragraph
+    and can have text wrap around them.
+
+    Key attributes:
+        distT/distB/distL/distR: Distance from text in EMUs
+        behindDoc: True if shape is behind document text
+        relativeHeight: Z-order relative to other shapes
+        locked: True if position is locked
+        layoutInCell: True if positioned relative to table cell
+        allowOverlap: True if can overlap other shapes
+
+    Key children:
+        wp:positionH: Horizontal position specification
+        wp:positionV: Vertical position specification
+        wp:extent: Size (cx, cy) in EMUs
+        wp:wrap*: Text wrapping specification (Square, Tight, Through, TopAndBottom, None)
+        wp:docPr: Drawing properties (id, name, description)
+        a:graphic: The actual graphic content
+    """
+
+    extent: CT_PositiveSize2D = ZeroOrOne("wp:extent")  # pyright: ignore[reportAssignmentType]
+    docPr: CT_NonVisualDrawingProps = ZeroOrOne("wp:docPr")  # pyright: ignore[reportAssignmentType]
+    graphic: CT_GraphicalObject = ZeroOrOne("a:graphic")  # pyright: ignore[reportAssignmentType]
+
+    # Position attributes
+    distT: int | None = OptionalAttribute("distT", ST_Coordinate)  # pyright: ignore[reportAssignmentType]
+    distB: int | None = OptionalAttribute("distB", ST_Coordinate)  # pyright: ignore[reportAssignmentType]
+    distL: int | None = OptionalAttribute("distL", ST_Coordinate)  # pyright: ignore[reportAssignmentType]
+    distR: int | None = OptionalAttribute("distR", ST_Coordinate)  # pyright: ignore[reportAssignmentType]
+    behindDoc: bool | None = OptionalAttribute("behindDoc", XsdString)  # pyright: ignore[reportAssignmentType]
+    relativeHeight: int | None = OptionalAttribute("relativeHeight", ST_Coordinate)  # pyright: ignore[reportAssignmentType]
+
+    @property
+    def is_behind_text(self) -> bool:
+        """True if this shape is positioned behind document text."""
+        return self.behindDoc == "1" or self.behindDoc == "true"
+
+    @classmethod
+    def new(
+        cls,
+        cx: Length,
+        cy: Length,
+        shape_id: int,
+        pic: CT_Picture,
+        pos_x: Length,
+        pos_y: Length,
+        behind_doc: bool = False,
+        relative_height: int = 251658240,
+        wrap_type: str = "square",
+        h_relative_from: str = "column",
+        v_relative_from: str = "paragraph",
+    ) -> CT_Anchor:
+        """Create a new `<wp:anchor>` element for a floating picture.
+
+        Args:
+            cx: Width in EMUs
+            cy: Height in EMUs
+            shape_id: Unique shape identifier
+            pic: The CT_Picture element containing the image
+            pos_x: Horizontal position offset in EMUs
+            pos_y: Vertical position offset in EMUs
+            behind_doc: If True, shape is behind document text
+            relative_height: Z-order (higher = on top)
+            wrap_type: Wrapping style ('none', 'square', 'tight', 'through', 'topAndBottom')
+            h_relative_from: Horizontal position relative to ('column', 'page', 'margin', etc.)
+            v_relative_from: Vertical position relative to ('paragraph', 'page', 'margin', etc.)
+
+        Returns:
+            A new CT_Anchor element.
+        """
+        anchor = cast(CT_Anchor, parse_xml(cls._anchor_xml(
+            cx, cy, shape_id, pos_x, pos_y, behind_doc, relative_height,
+            wrap_type, h_relative_from, v_relative_from
+        )))
+        anchor.graphic.graphicData.uri = "http://schemas.openxmlformats.org/drawingml/2006/picture"
+        anchor.graphic.graphicData._insert_pic(pic)
+        return anchor
+
+    @classmethod
+    def new_pic_anchor(
+        cls,
+        shape_id: int,
+        rId: str,
+        filename: str,
+        cx: Length,
+        cy: Length,
+        pos_x: Length,
+        pos_y: Length,
+        behind_doc: bool = False,
+        wrap_type: str = "square",
+        h_relative_from: str = "column",
+        v_relative_from: str = "paragraph",
+    ) -> CT_Anchor:
+        """Create `wp:anchor` element containing a `pic:pic` element.
+
+        Args:
+            shape_id: Unique shape identifier
+            rId: Relationship ID for the image
+            filename: Image filename
+            cx: Width in EMUs
+            cy: Height in EMUs
+            pos_x: Horizontal position offset in EMUs
+            pos_y: Vertical position offset in EMUs
+            behind_doc: If True, shape is behind document text
+            wrap_type: Wrapping style ('none', 'square', 'tight', 'through', 'topAndBottom')
+            h_relative_from: Horizontal position relative to
+            v_relative_from: Vertical position relative to
+
+        Returns:
+            A new CT_Anchor element with picture content.
+        """
+        pic_id = 0
+        pic = CT_Picture.new(pic_id, filename, rId, cx, cy)
+        anchor = cls.new(
+            cx, cy, shape_id, pic, pos_x, pos_y,
+            behind_doc=behind_doc,
+            wrap_type=wrap_type,
+            h_relative_from=h_relative_from,
+            v_relative_from=v_relative_from,
+        )
+        return anchor
+
+    @classmethod
+    def _anchor_xml(
+        cls,
+        cx: Length,
+        cy: Length,
+        shape_id: int,
+        pos_x: Length,
+        pos_y: Length,
+        behind_doc: bool,
+        relative_height: int,
+        wrap_type: str,
+        h_relative_from: str,
+        v_relative_from: str,
+    ) -> str:
+        """Generate the XML template for an anchor element."""
+        behind_doc_val = "1" if behind_doc else "0"
+
+        # Select wrap element based on wrap_type
+        wrap_elements = {
+            "none": "<wp:wrapNone/>",
+            "square": '<wp:wrapSquare wrapText="bothSides"/>',
+            "tight": '<wp:wrapTight wrapText="bothSides"><wp:wrapPolygon edited="0"><wp:start x="0" y="0"/><wp:lineTo x="0" y="21600"/><wp:lineTo x="21600" y="21600"/><wp:lineTo x="21600" y="0"/><wp:lineTo x="0" y="0"/></wp:wrapPolygon></wp:wrapTight>',
+            "through": '<wp:wrapThrough wrapText="bothSides"><wp:wrapPolygon edited="0"><wp:start x="0" y="0"/><wp:lineTo x="0" y="21600"/><wp:lineTo x="21600" y="21600"/><wp:lineTo x="21600" y="0"/><wp:lineTo x="0" y="0"/></wp:wrapPolygon></wp:wrapThrough>',
+            "topAndBottom": "<wp:wrapTopAndBottom/>",
+        }
+        wrap_xml = wrap_elements.get(wrap_type, wrap_elements["square"])
+
+        return (
+            '<wp:anchor %s distT="0" distB="0" distL="114300" distR="114300" '
+            'simplePos="0" relativeHeight="%d" behindDoc="%s" locked="0" '
+            'layoutInCell="1" allowOverlap="1">\n'
+            '  <wp:simplePos x="0" y="0"/>\n'
+            '  <wp:positionH relativeFrom="%s">\n'
+            '    <wp:posOffset>%d</wp:posOffset>\n'
+            '  </wp:positionH>\n'
+            '  <wp:positionV relativeFrom="%s">\n'
+            '    <wp:posOffset>%d</wp:posOffset>\n'
+            '  </wp:positionV>\n'
+            '  <wp:extent cx="%d" cy="%d"/>\n'
+            "  <wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/>\n"
+            "  %s\n"
+            '  <wp:docPr id="%d" name="Picture %d"/>\n'
+            "  <wp:cNvGraphicFramePr>\n"
+            '    <a:graphicFrameLocks noChangeAspect="1"/>\n'
+            "  </wp:cNvGraphicFramePr>\n"
+            "  <a:graphic>\n"
+            '    <a:graphicData uri="URI not set"/>\n'
+            "  </a:graphic>\n"
+            "</wp:anchor>"
+            % (
+                nsdecls("wp", "a", "pic", "r"),
+                relative_height,
+                behind_doc_val,
+                h_relative_from,
+                int(pos_x),
+                v_relative_from,
+                int(pos_y),
+                int(cx),
+                int(cy),
+                wrap_xml,
+                shape_id,
+                shape_id,
+            )
+        )
 
 
 class CT_Blip(BaseOxmlElement):
@@ -126,6 +313,7 @@ class CT_NonVisualDrawingProps(BaseOxmlElement):
 
     id = RequiredAttribute("id", ST_DrawingElementId)
     name = RequiredAttribute("name", XsdString)
+    descr: str | None = OptionalAttribute("descr", XsdString)  # pyright: ignore[reportAssignmentType]
 
 
 class CT_NonVisualPictureProperties(BaseOxmlElement):

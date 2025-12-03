@@ -143,6 +143,83 @@ class Document(ElementProxy):
         run = self.add_paragraph().add_run()
         return run.add_picture(image_path_or_stream, width, height)
 
+    def add_floating_picture(
+        self,
+        image_path_or_stream: str | IO[bytes],
+        width: int | Length | None = None,
+        height: int | Length | None = None,
+        pos_x: int | Length = Emu(0),
+        pos_y: int | Length = Emu(0),
+        behind_doc: bool = False,
+        wrap_type: str = "square",
+        h_relative_from: str = "column",
+        v_relative_from: str = "paragraph",
+    ):
+        """Return new floating picture shape added in its own paragraph.
+
+        The picture is positioned as an anchored/floating shape rather than inline with text.
+
+        Args:
+            image_path_or_stream: Path or file-like object containing the image.
+            width: Width of the image (None for native size).
+            height: Height of the image (None for native size).
+            pos_x: Horizontal position offset in EMUs (or Inches, Pt, etc.).
+            pos_y: Vertical position offset in EMUs (or Inches, Pt, etc.).
+            behind_doc: If True, image is placed behind document text.
+            wrap_type: Text wrapping style. One of:
+                - 'none': No wrapping (image floats over text)
+                - 'square': Square wrapping
+                - 'tight': Tight wrapping
+                - 'through': Through wrapping
+                - 'topAndBottom': Text flows above and below only
+            h_relative_from: Horizontal position relative to. One of:
+                - 'character', 'column', 'insideMargin', 'leftMargin', 'margin',
+                  'outsideMargin', 'page', 'rightMargin'
+            v_relative_from: Vertical position relative to. One of:
+                - 'insideMargin', 'line', 'margin', 'outsideMargin', 'page',
+                  'paragraph', 'topMargin', 'bottomMargin'
+
+        Returns:
+            FloatingShape: The newly created floating picture shape.
+
+        Example::
+
+            from docx.shared import Inches
+
+            # Add floating image at specific position
+            shape = document.add_floating_picture(
+                'image.png',
+                width=Inches(2),
+                pos_x=Inches(1),
+                pos_y=Inches(2),
+                wrap_type='square'
+            )
+
+            # Add image behind text (e.g., watermark)
+            shape = document.add_floating_picture(
+                'watermark.png',
+                behind_doc=True,
+                wrap_type='none'
+            )
+        """
+        from docx.shape import FloatingShape
+
+        # Convert pos_x and pos_y to int if they are Length objects
+        px = int(pos_x) if hasattr(pos_x, '__int__') else pos_x
+        py = int(pos_y) if hasattr(pos_y, '__int__') else pos_y
+
+        anchor = self._part.new_pic_anchor(
+            image_path_or_stream, width, height,
+            Emu(px), Emu(py),
+            behind_doc=behind_doc,
+            wrap_type=wrap_type,
+            h_relative_from=h_relative_from,
+            v_relative_from=v_relative_from,
+        )
+        run = self.add_paragraph().add_run()
+        run._r.add_drawing(anchor)
+        return FloatingShape(anchor, self._part)
+
     def add_section(self, start_type: WD_SECTION = WD_SECTION.NEW_PAGE):
         """Return a |Section| object newly added at the end of the document.
 

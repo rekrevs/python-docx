@@ -1,0 +1,136 @@
+# T-DRW-05: Implement Floating Shape Creation
+
+| Field | Value |
+|-------|-------|
+| ID | T-DRW-05 |
+| Parent | B-DRW-05 |
+| State | DONE |
+| Created | 2025-12-03 |
+| Completed | 2025-12-03 |
+
+## Objective
+
+Enable creating floating (anchored) images and shapes programmatically.
+
+## Acceptance Criteria
+
+- [x] Create anchored images with absolute position
+- [x] Set horizontal/vertical alignment (via h_relative_from, v_relative_from)
+- [x] Set wrap style (square, tight, none, etc.)
+- [x] Set behind_text property
+- [x] Proper z-order handling (relativeHeight parameter)
+- [x] All tests pass
+
+## Context
+
+**Specification:** `WOTAN/docs/tier3-specifications.md` - B-DRW-05 section
+
+**Current State:**
+- Can read floating shapes via `doc.floating_shapes`
+- Can create inline images via `paragraph.add_picture()`
+- Cannot create floating/anchored images
+
+**XML Structure:**
+
+```xml
+<w:drawing>
+  <wp:anchor distT="0" distB="0" distL="114300" distR="114300"
+             simplePos="0" relativeHeight="251658240"
+             behindDoc="0" locked="0" layoutInCell="1"
+             allowOverlap="1">
+    <wp:simplePos x="0" y="0"/>
+    <wp:positionH relativeFrom="column">
+      <wp:posOffset>914400</wp:posOffset>
+    </wp:positionH>
+    <wp:positionV relativeFrom="paragraph">
+      <wp:posOffset>457200</wp:posOffset>
+    </wp:positionV>
+    <wp:extent cx="1828800" cy="1371600"/>
+    <wp:wrapSquare wrapText="bothSides"/>
+    <wp:docPr id="1" name="Picture 1"/>
+    <a:graphic>...</a:graphic>
+  </wp:anchor>
+</w:drawing>
+```
+
+## Implementation Notes
+
+### Changes Made
+
+1. **src/docx/oxml/shape.py**
+   - Added `CT_Anchor.new()` factory method
+   - Added `CT_Anchor.new_pic_anchor()` convenience method
+   - Added `CT_Anchor._anchor_xml()` template generator
+   - Supports wrap types: none, square, tight, through, topAndBottom
+
+2. **src/docx/parts/story.py**
+   - Added `StoryPart.new_pic_anchor()` method
+
+3. **src/docx/document.py**
+   - Added `Document.add_floating_picture()` method
+
+### API
+
+```python
+from docx.shared import Inches
+
+# Add floating image at specific position
+shape = document.add_floating_picture(
+    'image.png',
+    width=Inches(2),
+    height=Inches(1.5),
+    pos_x=Inches(1),
+    pos_y=Inches(0.5),
+    wrap_type='square'
+)
+
+# Add image behind text (e.g., watermark)
+shape = document.add_floating_picture(
+    'watermark.png',
+    behind_doc=True,
+    wrap_type='none'
+)
+
+# Position relative to page
+shape = document.add_floating_picture(
+    'logo.png',
+    width=Inches(1),
+    pos_x=Inches(0.5),
+    pos_y=Inches(0.5),
+    h_relative_from='page',
+    v_relative_from='page',
+    wrap_type='none'
+)
+```
+
+## Evidence
+
+### Test Output
+
+```
+Test 1 - Create floating picture:
+  Shape width: 1828800
+  Shape height: 914400
+  Behind text: False
+
+Test 2 - Behind text image:
+  Behind text: True
+
+Test 3 - Floating shapes count: 2
+
+Test 4 - Save and reload:
+  Floating shapes after reload: 2
+  [0] width=1828800, height=914400, behind=False
+  [1] width=914400, height=914400, behind=True
+
+All tests passed!
+```
+
+### Test Results
+
+- pytest: 1609 passed
+- behave: 67 features, 650 scenarios passed
+
+## Outcome
+
+DONE - Floating picture creation implemented with full round-trip support. Images can be positioned absolutely, placed behind text, and have various wrap styles applied.

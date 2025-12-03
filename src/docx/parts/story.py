@@ -6,7 +6,7 @@ from typing import IO, TYPE_CHECKING, Tuple, cast
 
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.opc.part import XmlPart
-from docx.oxml.shape import CT_Inline
+from docx.oxml.shape import CT_Anchor, CT_Inline
 from docx.shared import Length, lazyproperty
 
 if TYPE_CHECKING:
@@ -72,6 +72,45 @@ class StoryPart(XmlPart):
         cx, cy = image.scaled_dimensions(width, height)
         shape_id, filename = self.next_id, image.filename
         return CT_Inline.new_pic_inline(shape_id, rId, filename, cx, cy)
+
+    def new_pic_anchor(
+        self,
+        image_descriptor: str | IO[bytes],
+        width: int | Length | None,
+        height: int | Length | None,
+        pos_x: Length,
+        pos_y: Length,
+        behind_doc: bool = False,
+        wrap_type: str = "square",
+        h_relative_from: str = "column",
+        v_relative_from: str = "paragraph",
+    ) -> CT_Anchor:
+        """Return a newly-created `wp:anchor` element for a floating image.
+
+        Args:
+            image_descriptor: Path or file-like object for the image.
+            width: Width of the image (None for native size).
+            height: Height of the image (None for native size).
+            pos_x: Horizontal position offset in EMUs.
+            pos_y: Vertical position offset in EMUs.
+            behind_doc: If True, image is placed behind text.
+            wrap_type: Text wrapping style ('none', 'square', 'tight', 'through', 'topAndBottom').
+            h_relative_from: Horizontal position relative to ('column', 'page', 'margin', etc.).
+            v_relative_from: Vertical position relative to ('paragraph', 'page', 'margin', etc.).
+
+        Returns:
+            A new CT_Anchor element containing the image.
+        """
+        rId, image = self.get_or_add_image(image_descriptor)
+        cx, cy = image.scaled_dimensions(width, height)
+        shape_id, filename = self.next_id, image.filename
+        return CT_Anchor.new_pic_anchor(
+            shape_id, rId, filename, cx, cy, pos_x, pos_y,
+            behind_doc=behind_doc,
+            wrap_type=wrap_type,
+            h_relative_from=h_relative_from,
+            v_relative_from=v_relative_from,
+        )
 
     @property
     def next_id(self) -> int:

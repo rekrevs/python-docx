@@ -5,20 +5,40 @@ from __future__ import annotations
 from typing import Dict
 
 nsmap = {
+    # DrawingML namespaces
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+    "a14": "http://schemas.microsoft.com/office/drawing/2010/main",
+    "asvg": "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
     "c": "http://schemas.openxmlformats.org/drawingml/2006/chart",
+    "dgm": "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+    "pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
+    # Dublin Core / Core Properties
     "cp": "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
     "dc": "http://purl.org/dc/elements/1.1/",
     "dcmitype": "http://purl.org/dc/dcmitype/",
     "dcterms": "http://purl.org/dc/terms/",
-    "dgm": "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+    # Markup Compatibility namespace
+    "mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
+    # Office namespaces
     "m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
-    "pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
     "sl": "http://schemas.openxmlformats.org/schemaLibrary/2006/main",
+    # VML namespace (for mc:Fallback content)
+    "v": "urn:schemas-microsoft-com:vml",
+    # WordprocessingML namespaces
     "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
     "w14": "http://schemas.microsoft.com/office/word/2010/wordml",
+    "w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+    "w16": "http://schemas.microsoft.com/office/word/2018/wordml",
+    "w16cex": "http://schemas.microsoft.com/office/word/2020/wordml/cex",
+    "w16cid": "http://schemas.microsoft.com/office/word/2016/wordml/cid",
+    "w16sdtdh": "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
+    "w16se": "http://schemas.microsoft.com/office/word/2015/wordml/symex",
     "wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+    "wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
+    # WordprocessingML Shape namespaces (for text boxes)
+    "wps": "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+    # XML namespaces
     "xml": "http://www.w3.org/XML/1998/namespace",
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
 }

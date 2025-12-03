@@ -16,15 +16,19 @@ from docx.text.run import Run
 
 if TYPE_CHECKING:
     import docx.types as t
+    from docx.bookmarks import Bookmarks
     from docx.comments import Comment, Comments
     from docx.fields import Fields
+    from docx.footnotes import Endnotes, Footnotes
     from docx.oxml.document import CT_Body, CT_Document
     from docx.parts.document import DocumentPart
+    from docx.revisions import Revisions
     from docx.sdt import SdtContentControls
     from docx.settings import Settings
     from docx.styles.style import ParagraphStyle, _TableStyle
     from docx.table import Table
     from docx.text.paragraph import Paragraph
+    from docx.textbox import TextBoxes
 
 
 class Document(ElementProxy):
@@ -160,6 +164,34 @@ class Document(ElementProxy):
         return table
 
     @property
+    def bookmarks(self) -> Bookmarks:
+        """A |Bookmarks| collection providing access to bookmarks in this document.
+
+        Bookmarks are named ranges that can be used as targets for cross-references,
+        hyperlinks, or programmatic document navigation.
+
+        Example::
+
+            # Iterate over all bookmarks
+            for bookmark in document.bookmarks:
+                print(f"{bookmark.name}: id={bookmark.bookmark_id}")
+
+            # Get bookmark by name
+            toc_bm = document.bookmarks.get("_Toc123456789")
+
+            # Check if bookmark exists
+            if "MyBookmark" in document.bookmarks:
+                print("Found it!")
+
+            # Filter system vs user bookmarks
+            user_bookmarks = [bm for bm in document.bookmarks if not bm.is_system]
+        """
+        from docx.bookmarks import Bookmarks
+
+        bookmark_starts = self._element.body.xpath(".//w:bookmarkStart")
+        return Bookmarks(bookmark_starts)
+
+    @property
     def comments(self) -> Comments:
         """A |Comments| object providing access to comments added to the document."""
         return self._part.comments
@@ -237,6 +269,77 @@ class Document(ElementProxy):
         return Fields(simple_fields, complex_fields)
 
     @property
+    def endnotes(self) -> Endnotes:
+        """A |Endnotes| collection providing access to endnotes in this document.
+
+        Endnotes are notes that appear at the end of the document, referenced by
+        superscript numbers or symbols in the document body.
+
+        Example::
+
+            # Iterate over all endnotes
+            for endnote in document.endnotes:
+                print(f"Endnote {endnote.endnote_id}: {endnote.text}")
+
+            # Access a specific endnote by id
+            endnote = document.endnotes[1]
+            if endnote:
+                print(endnote.text)
+        """
+        return self._part.endnotes
+
+    @property
+    def floating_shapes(self):
+        """A |FloatingShapes| collection of floating/anchored shapes in this document.
+
+        Floating shapes (also called anchored shapes) are positioned independently
+        of the text flow and can have text wrap around them. This is in contrast
+        to inline shapes which flow with the text.
+
+        Example::
+
+            # Iterate over floating shapes
+            for shape in document.floating_shapes:
+                print(f"Shape: {shape.name}, size: {shape.width}x{shape.height}")
+
+            # Access by index
+            if len(document.floating_shapes) > 0:
+                first_shape = document.floating_shapes[0]
+                print(f"Type: {first_shape.type}")
+
+            # Check if behind text
+            for shape in document.floating_shapes:
+                if shape.is_behind_text:
+                    print(f"{shape.name} is behind text")
+        """
+        from docx.shape import FloatingShapes
+
+        return FloatingShapes(self._element.body, self._part)
+
+    @property
+    def footnotes(self) -> Footnotes:
+        """A |Footnotes| collection providing access to footnotes in this document.
+
+        Footnotes are notes that appear at the bottom of the page, referenced by
+        superscript numbers or symbols in the document body.
+
+        Example::
+
+            # Iterate over all footnotes
+            for footnote in document.footnotes:
+                print(f"Footnote {footnote.footnote_id}: {footnote.text}")
+
+            # Access a specific footnote by id
+            footnote = document.footnotes[1]
+            if footnote:
+                print(footnote.text)
+
+            # Get the number of footnotes
+            print(f"Total footnotes: {len(document.footnotes)}")
+        """
+        return self._part.footnotes
+
+    @property
     def inline_shapes(self):
         """The |InlineShapes| collection for this document.
 
@@ -264,6 +367,44 @@ class Document(ElementProxy):
         """The |DocumentPart| object of this document."""
         return self._part
 
+    @property
+    def revisions(self) -> Revisions:
+        """A |Revisions| collection providing read-only access to track changes.
+
+        Track changes (revisions) record insertions, deletions, and formatting
+        changes made to the document when revision tracking is enabled in Word.
+
+        Example::
+
+            # Check if document has revisions
+            if len(document.revisions) > 0:
+                print(f"Document has {len(document.revisions)} tracked changes")
+
+            # Iterate over all revisions
+            for revision in document.revisions:
+                print(f"{revision.revision_type.value}: '{revision.text}' by {revision.author}")
+
+            # Get only insertions or deletions
+            insertions = document.revisions.insertions
+            deletions = document.revisions.deletions
+
+            # Get unique authors
+            authors = document.revisions.authors
+
+            # Filter by author
+            for r in document.revisions.by_author("John Doe"):
+                print(r.text)
+
+        Note:
+            This provides read-only access. Accepting or rejecting revisions
+            is not currently supported.
+        """
+        from docx.revisions import Revisions
+
+        insertions = self._element.body.xpath(".//w:ins")
+        deletions = self._element.body.xpath(".//w:del")
+        return Revisions(insertions, deletions)
+
     def save(self, path_or_stream: str | IO[bytes]):
         """Save this document to `path_or_stream`.
 
@@ -288,6 +429,25 @@ class Document(ElementProxy):
         return self._part.styles
 
     @property
+    def theme(self):
+        """A |Theme| object providing access to the document's theme.
+
+        The theme defines the color scheme, font scheme, and effects used in the document.
+
+        Example::
+
+            # Access theme colors
+            theme = document.theme
+            print(f"Theme: {theme.name}")
+            print(f"Accent 1: {theme.colors.accent1}")  # RGBColor
+
+            # Access theme fonts
+            print(f"Heading font: {theme.fonts.major_latin}")
+            print(f"Body font: {theme.fonts.minor_latin}")
+        """
+        return self._part.theme
+
+    @property
     def tables(self) -> List[Table]:
         """All |Table| instances in the document, in document order.
 
@@ -297,6 +457,34 @@ class Document(ElementProxy):
         list.
         """
         return self._body.tables
+
+    @property
+    def text_boxes(self) -> TextBoxes:
+        """A |TextBoxes| collection providing access to text boxes in this document.
+
+        Text boxes are floating containers that can hold paragraphs and tables.
+        They are stored inside mc:AlternateContent elements in the document.
+
+        Example::
+
+            # Iterate over all text boxes
+            for textbox in document.text_boxes:
+                print(f"Text box with {len(textbox.paragraphs)} paragraphs")
+                for para in textbox.paragraphs:
+                    print(f"  {para.text}")
+
+            # Access by index
+            if document.text_boxes:
+                first_box = document.text_boxes[0]
+                print(first_box.text)
+
+            # Modify text box content
+            document.text_boxes[0].paragraphs[0].text = "Updated text"
+        """
+        from docx.textbox import TextBoxes
+
+        alt_contents = self._element.body.xpath(".//mc:AlternateContent")
+        return TextBoxes(alt_contents, self._part)
 
     @property
     def _block_width(self) -> Length:

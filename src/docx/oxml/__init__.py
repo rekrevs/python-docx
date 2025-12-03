@@ -125,6 +125,46 @@ register_element_cls("w:fldSimple", CT_FldSimple)
 register_element_cls("w:fldChar", CT_FldChar)
 register_element_cls("w:instrText", CT_FldInstrText)
 
+from .footnotes import (
+    CT_Endnote,
+    CT_EndnoteReference,
+    CT_Endnotes,
+    CT_Footnote,
+    CT_FootnoteReference,
+    CT_Footnotes,
+)
+
+register_element_cls("w:footnotes", CT_Footnotes)
+register_element_cls("w:footnote", CT_Footnote)
+register_element_cls("w:footnoteReference", CT_FootnoteReference)
+register_element_cls("w:endnotes", CT_Endnotes)
+register_element_cls("w:endnote", CT_Endnote)
+register_element_cls("w:endnoteReference", CT_EndnoteReference)
+
+from .bookmarks import CT_Bookmark, CT_MarkupRange
+
+register_element_cls("w:bookmarkStart", CT_Bookmark)
+register_element_cls("w:bookmarkEnd", CT_MarkupRange)
+
+from .revisions import (
+    CT_PPrChange,
+    CT_RPrChange,
+    CT_RunTrackChange,
+    CT_SectPrChange,
+    CT_TblPrChange,
+    CT_TcPrChange,
+    CT_TrPrChange,
+)
+
+register_element_cls("w:ins", CT_RunTrackChange)
+register_element_cls("w:del", CT_RunTrackChange)
+register_element_cls("w:pPrChange", CT_PPrChange)
+register_element_cls("w:rPrChange", CT_RPrChange)
+register_element_cls("w:sectPrChange", CT_SectPrChange)
+register_element_cls("w:tblPrChange", CT_TblPrChange)
+register_element_cls("w:tcPrChange", CT_TcPrChange)
+register_element_cls("w:trPrChange", CT_TrPrChange)
+
 from .document import CT_Body, CT_Document
 
 register_element_cls("w:body", CT_Body)
@@ -279,3 +319,52 @@ register_element_cls("w:spacing", CT_Spacing)
 register_element_cls("w:tab", CT_TabStop)
 register_element_cls("w:tabs", CT_TabStops)
 register_element_cls("w:widowControl", CT_OnOff)
+
+# ---------------------------------------------------------------------------
+# theme-related elements
+
+from .theme import (
+    CT_BaseStyles,
+    CT_Color,
+    CT_ColorScheme,
+    CT_FontCollection,
+    CT_FontScheme,
+    CT_OfficeStyleSheet,
+    CT_SRgbColor,
+    CT_SystemColor,
+    CT_TextFont,
+)
+
+register_element_cls("a:theme", CT_OfficeStyleSheet)
+register_element_cls("a:themeElements", CT_BaseStyles)
+register_element_cls("a:clrScheme", CT_ColorScheme)
+register_element_cls("a:fontScheme", CT_FontScheme)
+register_element_cls("a:majorFont", CT_FontCollection)
+register_element_cls("a:minorFont", CT_FontCollection)
+register_element_cls("a:latin", CT_TextFont)
+register_element_cls("a:ea", CT_TextFont)
+register_element_cls("a:cs", CT_TextFont)
+register_element_cls("a:dk1", CT_Color)
+register_element_cls("a:lt1", CT_Color)
+register_element_cls("a:dk2", CT_Color)
+register_element_cls("a:lt2", CT_Color)
+register_element_cls("a:accent1", CT_Color)
+register_element_cls("a:accent2", CT_Color)
+register_element_cls("a:accent3", CT_Color)
+register_element_cls("a:accent4", CT_Color)
+register_element_cls("a:accent5", CT_Color)
+register_element_cls("a:accent6", CT_Color)
+register_element_cls("a:hlink", CT_Color)
+register_element_cls("a:folHlink", CT_Color)
+register_element_cls("a:sysClr", CT_SystemColor)
+register_element_cls("a:srgbClr", CT_SRgbColor)
+
+# ---------------------------------------------------------------------------
+# Markup Compatibility and Extensibility (MCE) elements
+
+from .mce import CT_AlternateContent, CT_Choice, CT_Fallback, CT_TxbxContent
+
+register_element_cls("mc:AlternateContent", CT_AlternateContent)
+register_element_cls("mc:Choice", CT_Choice)
+register_element_cls("mc:Fallback", CT_Fallback)
+register_element_cls("w:txbxContent", CT_TxbxContent)

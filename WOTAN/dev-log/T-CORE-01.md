@@ -1,0 +1,115 @@
+# T-CORE-01: mc:AlternateContent Research and Specification
+
+| Field | Value |
+|-------|-------|
+| ID | T-CORE-01 |
+| Parent | B-CORE-01 |
+| State | DONE |
+| Created | 2025-12-03 |
+
+## Objective
+
+Research and document a complete specification for handling `mc:AlternateContent` blocks in python-docx, enabling API access to content that is currently invisible (text boxes, modern shapes, Word 2010+ features).
+
+## Acceptance Criteria
+
+- [ ] Document MCE specification from ECMA-376 Part 3
+- [ ] Analyze mc:AlternateContent structure in real documents
+- [ ] Research how docx4j, Open XML SDK, Apache POI handle MCE
+- [ ] Document community issues and workarounds
+- [ ] Write detailed implementation specification
+- [ ] Update B-CORE-01 with findings and mark as [READY] with full spec
+
+## Context
+
+**OOXML Specifications:**
+- ECMA-376 Part 3: Markup Compatibility and Extensibility (MCE)
+- ISO/IEC 29500-3
+
+**Existing Research:**
+- `WOTAN/docs/version-compatibility.md` - Initial findings on MCE gap
+
+**Key Problem:**
+Content inside `mc:AlternateContent` blocks is preserved in XML but invisible to `doc.paragraphs`, `doc.tables`, etc. This affects:
+- Text boxes
+- Modern vector graphics (DrawingML shapes)
+- Word 2010+ specific features
+
+**GitHub Issues:**
+- python-docx [#1389](https://github.com/python-openxml/python-docx/issues/1389)
+
+## Subtasks
+
+| ID | Description | State |
+|----|-------------|-------|
+| T-CORE-01-1 | Research ECMA-376 Part 3 MCE specification | READY |
+| T-CORE-01-2 | Analyze mc:AlternateContent in example documents | READY |
+| T-CORE-01-3 | Research other library implementations | READY |
+| T-CORE-01-4 | Write implementation specification | READY |
+
+## Implementation Notes
+
+### MCE Specification Summary
+
+Based on ECMA-376 Part 3:
+- `mc:AlternateContent` contains `mc:Choice` (modern) and `mc:Fallback` (legacy)
+- `mc:Choice` has `Requires` attribute specifying needed namespaces
+- `mc:Ignorable` attribute allows unknown namespaces to be skipped
+- `mc:ProcessContent` allows processing children of ignored elements
+
+### Key Finding: Text Boxes
+
+Text boxes are wrapped in `mc:AlternateContent` with:
+- `mc:Choice Requires="wps"` containing DrawingML (`wps:wsp/wps:txbx/w:txbxContent`)
+- `mc:Fallback` containing VML (`v:shape/v:textbox/w:txbxContent`)
+
+Both contain `w:txbxContent` which holds the actual paragraphs.
+
+### How Other Libraries Handle MCE
+
+- **docx4j**: Uses preprocessing, historically selected Fallback, now preserves Choice
+- **Open XML SDK**: Has explicit `AlternateContent` class with version targeting
+- **Community**: Manual XPath access, custom TextBox classes
+
+### Recommended Strategy: "Choice-First with Preservation"
+
+1. Read from `mc:Choice` (modern, richer content)
+2. Write to both `mc:Choice` and `mc:Fallback` (preserve compatibility)
+3. Preserve entire structure on round-trip
+
+## Obstacles
+
+None encountered.
+
+## Evidence
+
+### Document Analysis
+
+From `Q-NEXUS_Application Form (Part B)_250925.docx`:
+- 3 `mc:AlternateContent` elements found
+- All contain text boxes with `w:txbxContent`
+- Content verified invisible via `doc.paragraphs` API
+- Text "Instructions, please remove" exists in text box but NOT in `doc.paragraphs`
+
+### Specification Document
+
+Created `WOTAN/docs/mce-specification.md` with:
+- Complete MCE element documentation
+- Implementation plan (5 phases)
+- API design
+- Testing strategy
+- Acceptance criteria
+
+## Outcome
+
+**DONE**
+
+All acceptance criteria met:
+- [x] Document MCE specification from ECMA-376 Part 3
+- [x] Analyze mc:AlternateContent structure in real documents
+- [x] Research how docx4j, Open XML SDK, Apache POI handle MCE
+- [x] Document community issues and workarounds
+- [x] Write detailed implementation specification
+- [x] Update B-CORE-01 with findings
+
+Next: Proceed to implementation per specification in `WOTAN/docs/mce-specification.md`

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from docx.comments import Comment, Comments
     from docx.oxml.document import CT_Body, CT_Document
     from docx.parts.document import DocumentPart
+    from docx.sdt import SdtContentControls
     from docx.settings import Settings
     from docx.styles.style import ParagraphStyle, _TableStyle
     from docx.table import Table
@@ -161,6 +162,33 @@ class Document(ElementProxy):
     def comments(self) -> Comments:
         """A |Comments| object providing access to comments added to the document."""
         return self._part.comments
+
+    @property
+    def content_controls(self) -> SdtContentControls:
+        """A |SdtContentControls| collection of content controls in this document.
+
+        Content controls (also called Structured Document Tags or SDTs) are used for
+        creating fillable forms, data-bound regions, and document building blocks.
+
+        This property provides access to block-level content controls in the document
+        body. Content controls in headers, footers, or table cells are not included.
+
+        Content controls can be accessed by index, iterated, or searched by tag or alias.
+
+        Example::
+
+            # Iterate over all content controls
+            for cc in document.content_controls:
+                print(f"{cc.tag}: {cc.text}")
+
+            # Find a specific content control by tag
+            name_field = document.content_controls.get_by_tag("customer_name")
+            if name_field:
+                print(name_field.text)
+        """
+        from docx.sdt import SdtContentControls
+
+        return SdtContentControls(self._element.body.sdt_lst, self._part)
 
     @property
     def core_properties(self):

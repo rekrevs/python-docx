@@ -91,6 +91,30 @@ from .comments import CT_Comments, CT_Comment
 register_element_cls("w:comments", CT_Comments)
 register_element_cls("w:comment", CT_Comment)
 
+from .sdt import (
+    CT_SdtBlock,
+    CT_SdtComboBox,
+    CT_SdtContentBlock,
+    CT_SdtContentRun,
+    CT_SdtDate,
+    CT_SdtDocPartObj,
+    CT_SdtDropDownList,
+    CT_SdtListItem,
+    CT_SdtPr,
+    CT_SdtRun,
+    CT_SdtText,
+)
+
+register_element_cls("w:sdt", CT_SdtBlock)  # Block-level SDT
+register_element_cls("w:sdtPr", CT_SdtPr)
+register_element_cls("w:sdtContent", CT_SdtContentBlock)  # Default to block content
+register_element_cls("w:text", CT_SdtText)
+register_element_cls("w:date", CT_SdtDate)
+register_element_cls("w:dropDownList", CT_SdtDropDownList)
+register_element_cls("w:comboBox", CT_SdtComboBox)
+register_element_cls("w:docPartObj", CT_SdtDocPartObj)
+register_element_cls("w:listItem", CT_SdtListItem)
+
 from .coreprops import CT_CoreProperties
 
 register_element_cls("cp:coreProperties", CT_CoreProperties)

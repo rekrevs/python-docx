@@ -662,6 +662,95 @@ class Document(ElementProxy):
         return self._part.theme
 
     @property
+    def conformance(self) -> str:
+        """Return the OOXML conformance class of this document.
+
+        Returns either 'transitional' or 'strict'.
+
+        Transitional conformance is the default format used by Word 2007 and later.
+        Strict conformance uses different namespaces and is less common.
+
+        Example::
+
+            if document.conformance == 'strict':
+                print("Warning: Strict conformance document - some features may not work")
+        """
+        # Check the main namespace of the document element
+        nsmap = self._element.nsmap
+        w_ns = nsmap.get("w", "")
+        if "purl.oclc.org" in w_ns:
+            return "strict"
+        return "transitional"
+
+    @property
+    def minimum_word_version(self) -> str:
+        """Return the minimum Microsoft Word version required to open this document.
+
+        This is determined by analyzing the mc:Ignorable attribute which lists
+        namespace prefixes for features that can be safely ignored by older versions.
+
+        Returns one of:
+        - 'Word 2007': No extended namespaces
+        - 'Word 2010': Uses w14 namespace
+        - 'Word 2013': Uses w15 namespace
+        - 'Word 2016': Uses w16 namespace
+        - 'Word 365/2019': Uses w16cid or w16cex
+        - 'Word 2021+': Uses w16sdtdh
+
+        Example::
+
+            print(f"This document requires {document.minimum_word_version} or later")
+        """
+        # Get mc:Ignorable attribute from root element
+        ignorable = self._element.get(
+            "{http://schemas.openxmlformats.org/markup-compatibility/2006}Ignorable"
+        )
+        if ignorable is None:
+            return "Word 2007"
+
+        prefixes = set(ignorable.split())
+
+        # Check in order of newest to oldest
+        if "w16sdtdh" in prefixes:
+            return "Word 2021+"
+        if "w16cex" in prefixes or "w16cid" in prefixes:
+            return "Word 365/2019"
+        if "w16" in prefixes or "w16se" in prefixes:
+            return "Word 2016"
+        if "w15" in prefixes:
+            return "Word 2013"
+        if "w14" in prefixes:
+            return "Word 2010"
+        return "Word 2007"
+
+    @property
+    def supported_namespaces(self) -> List[str]:
+        """Return a list of Word extension namespace prefixes used in this document.
+
+        These are extracted from the mc:Ignorable attribute on the document element.
+        Common prefixes include:
+        - w14: Word 2010 features
+        - w15: Word 2013 features
+        - w16, w16se, w16cid, w16cex: Word 2016/365 features
+        - w16sdtdh: Word 2021+ features
+        - wp14: Word 2010 drawing features
+
+        Example::
+
+            namespaces = document.supported_namespaces
+            print(f"This document uses: {', '.join(namespaces)}")
+
+            if 'w15' in namespaces:
+                print("Document uses Word 2013 features")
+        """
+        ignorable = self._element.get(
+            "{http://schemas.openxmlformats.org/markup-compatibility/2006}Ignorable"
+        )
+        if ignorable is None:
+            return []
+        return ignorable.split()
+
+    @property
     def tables(self) -> List[Table]:
         """All |Table| instances in the document, in document order.
 

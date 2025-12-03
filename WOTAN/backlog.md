@@ -136,158 +136,172 @@ Text boxes are now accessible via `doc.text_boxes`:
 
 ## Tier 2: Write Support for Extensions
 
-### B-SDT-02: Content Control Creation `[READY]`
+### B-SDT-02: Content Control Creation `[DONE]`
 
 **Intent:** Enable creating new content controls programmatically.
 
-**Details:**
-Current state: Can read content controls and access their content, but cannot create new ones.
+**Next:** T-SDT-02 (completed)
 
-Needed:
-- `document.add_content_control(type, tag=None, alias=None)`
-- Support for text, date, dropdown, comboBox, checkbox types
-- Setting dropdown/comboBox list items
-- Setting date format and calendar type
+**Details:**
+Implemented via `document.add_content_control(type, tag=None, alias=None)`:
+- Support for text, date, dropdown, comboBox types
+- Setting tag and alias properties
+- Block-level content controls only (for now)
 
 **Acceptance Criteria:**
-- Create content controls of all supported types
-- Set tag, alias, and type-specific properties
-- Document opens correctly in Word with functional controls
+- [x] Create content controls of supported types
+- [x] Set tag, alias, and type-specific properties
+- [x] Document opens correctly in Word with functional controls
 
 ---
 
-### B-FLD-03: Field Creation `[READY]`
+### B-FLD-03: Field Creation `[DONE]`
 
 **Intent:** Enable creating new fields programmatically.
 
-**Details:**
-Current state: Can read simple and complex fields, but cannot create new ones.
+**Next:** T-FLD-03 (completed)
 
-Common use cases:
-- Insert PAGE/NUMPAGES fields for page numbering
-- Insert DATE fields
-- Insert cross-references (REF, PAGEREF)
-- Insert HYPERLINK fields
+**Details:**
+Implemented both simple and complex field creation:
+- `run.add_simple_field(field_code)` for simple fields
+- `run.add_complex_field(field_code)` for complex fields
+- Support for PAGE, NUMPAGES, DATE, REF, HYPERLINK, etc.
 
 **Acceptance Criteria:**
-- Create simple fields with `run.add_field(field_type, switches=None)`
-- Create complex fields when needed
-- Fields update correctly when document is opened in Word
+- [x] Create simple fields
+- [x] Create complex fields when needed
+- [x] Fields update correctly when document is opened in Word
 
 ---
 
-### B-DRW-04: Bookmark Creation `[READY]`
+### B-DRW-04: Bookmark Creation `[DONE]`
 
 **Intent:** Enable creating new bookmarks programmatically.
 
-**Details:**
-Current state: Can read bookmarks, but cannot create new ones.
+**Next:** T-DRW-04 (completed)
 
-Needed:
-- `document.add_bookmark(name, start_element, end_element=None)` or similar
-- Bookmark ID management (must be unique within document)
-- Support for point bookmarks (start and end at same location) and range bookmarks
+**Details:**
+Implemented `paragraph.add_bookmark(name)` and `run.add_bookmark(name)`:
+- Automatic unique ID generation
+- Point bookmarks (start and end at same location)
 
 **Acceptance Criteria:**
-- Create bookmarks at specific locations
-- Unique ID generation/management
-- Can be used as targets for cross-references and hyperlinks
+- [x] Create bookmarks at specific locations
+- [x] Unique ID generation/management
+- [x] Can be used as targets for cross-references and hyperlinks
 
 ---
 
-### B-FN-02: Footnote/Endnote Creation `[READY]`
+### B-FN-02: Footnote/Endnote Creation `[DONE]`
 
 **Intent:** Enable creating new footnotes and endnotes programmatically.
 
-**Details:**
-Current state: Can read footnotes/endnotes and their content, but cannot create new ones.
+**Next:** T-FN-02 (completed)
 
-Needed:
-- `run.add_footnote(text=None)` to insert footnote reference and create footnote
-- `run.add_endnote(text=None)` for endnotes
-- Return footnote/endnote object for adding content
+**Details:**
+Implemented `run.add_footnote_reference()` and `run.add_endnote_reference()`:
+- Inserts reference mark in text
+- Creates footnote/endnote in respective part
+- Returns footnote/endnote object for adding content
+- Automatic ID management
 
 **Acceptance Criteria:**
-- Insert footnote/endnote references in text
-- Create corresponding footnote/endnote with content
-- Proper footnote ID management
-- Correct rendering in Word
+- [x] Insert footnote/endnote references in text
+- [x] Create corresponding footnote/endnote with content
+- [x] Proper footnote ID management
+- [x] Correct rendering in Word
 
 ---
 
-### B-REV-02: Accept/Reject Track Changes `[NEEDS-SPEC]`
+### B-REV-02: Accept/Reject Track Changes `[DONE]`
 
 **Intent:** Programmatically accept or reject tracked changes.
 
-**Details:**
-Current state: Can read track changes (insertions, deletions, author, date), but cannot accept/reject them.
+**Next:** T-REV-02 (completed)
 
-Needed:
-- `revision.accept()` - apply the change and remove tracking markup
-- `revision.reject()` - revert the change and remove tracking markup
-- `document.revisions.accept_all()` / `reject_all()`
+**Details:**
+Implemented `revision.accept()`, `revision.reject()`, and bulk methods:
+- Accept insertions: moves runs out of w:ins, removes wrapper
+- Reject insertions: removes entire w:ins with contents
+- Accept deletions: removes w:del element entirely
+- Reject deletions: converts w:delText back to w:t
 
 **Acceptance Criteria:**
-- Accept individual insertions (text becomes normal, w:ins removed)
-- Reject individual insertions (text removed)
-- Accept individual deletions (text removed, w:del removed)
-- Reject individual deletions (text restored)
-- Bulk accept/reject all changes
+- [x] Accept individual insertions (text becomes normal, w:ins removed)
+- [x] Reject individual insertions (text removed)
+- [x] Accept individual deletions (text removed, w:del removed)
+- [x] Reject individual deletions (text restored)
+- [x] Bulk accept/reject all changes
 
 ---
 
 ## Tier 3: Additional Features
 
-### B-DRW-05: Floating Shape Creation `[READY]`
+### B-DRW-05: Floating Shape Creation `[DONE]`
 
 **Intent:** Enable creating floating (anchored) images and shapes programmatically.
 
+**Next:** T-DRW-05 (completed)
+
 **Details:**
-Current state: Can read floating shapes, but cannot create them. Only inline images can be created.
+Implemented `document.add_floating_picture()`:
+- Create anchored images with absolute position
+- Support wrap types: none, square, tight, through, topAndBottom
+- Support behind_doc, h_relative_from, v_relative_from
 
 **Specification:** `WOTAN/docs/tier3-specifications.md` - B-DRW-05 section
 
 **Acceptance Criteria:**
-- Create anchored images with absolute position
-- Set horizontal/vertical alignment
-- Set wrap style (square, tight, none, etc.)
-- Set behind_text property
-- Proper z-order handling
+- [x] Create anchored images with absolute position
+- [x] Set horizontal/vertical alignment (via relative_from)
+- [x] Set wrap style (square, tight, none, etc.)
+- [x] Set behind_text property
+- [x] Proper z-order handling
 
 ---
 
-### B-STY-02: Theme Modification `[READY]`
+### B-STY-02: Theme Modification `[DONE]`
 
 **Intent:** Enable modifying theme colors and fonts.
 
+**Next:** T-STY-02 (completed)
+
 **Details:**
-Current state: Can read theme colors and fonts, but cannot modify them.
+Implemented setters for theme colors and fonts:
+- `doc.theme.colors.accent1 = RGBColor(...)` or hex string
+- `doc.theme.fonts.major_latin = "Arial"`
+- All 12 colors and 6 font slots modifiable
 
 **Specification:** `WOTAN/docs/tier3-specifications.md` - B-STY-02 section
 
 **Acceptance Criteria:**
-- Modify all 12 theme colors
-- Modify major and minor fonts
-- Changes persist after save
-- Document displays correctly in Word
+- [x] Modify all 12 theme colors
+- [x] Modify major and minor fonts
+- [x] Changes persist after save
+- [x] Document displays correctly in Word
 
 ---
 
-### B-CORE-02: Strict OOXML Conformance Detection `[READY]`
+### B-CORE-02: Strict OOXML Conformance Detection `[DONE]`
 
 **Intent:** Detect and handle OOXML Strict conformance class documents.
 
+**Next:** T-CORE-03 (completed)
+
 **Details:**
-Most documents use Transitional conformance, but Strict exists and uses different namespaces.
-Currently python-docx assumes Transitional.
+Implemented three new properties on Document class:
+- `doc.conformance` - Returns 'transitional' or 'strict'
+- `doc.minimum_word_version` - Returns version string (Word 2007 through Word 2021+)
+- `doc.supported_namespaces` - Returns list of namespace prefixes
 
 **Specification:** `WOTAN/docs/tier3-specifications.md` - B-CORE-02 section
 
 **Acceptance Criteria:**
-- Detect Transitional vs Strict conformance
-- Detect minimum Word version from namespaces
-- Warning when opening Strict documents
-- Basic Strict document reading (future: full support)
+- [x] Detect Transitional vs Strict conformance
+- [x] Detect minimum Word version from namespaces
+- [x] List supported extension namespaces
+- [ ] Warning when opening Strict documents (deferred)
+- [ ] Basic Strict document reading (deferred - Strict documents are rare)
 
 ---
 

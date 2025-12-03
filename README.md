@@ -8,17 +8,20 @@ The upstream *python-docx* library provides excellent support for basic document
 
 This fork adds the following capabilities:
 
-| Feature | Description |
-|---------|-------------|
-| **Content Controls (SDT)** | Read structured document tags - text, date, dropdown, comboBox types. Access by tag/alias. |
-| **Fields** | Read simple and complex fields - PAGE, DATE, TOC, REF, CITATION, HYPERLINK, etc. |
-| **Footnotes & Endnotes** | Read footnote/endnote content with full paragraph and table support. |
-| **Bookmarks** | Read bookmarks, filter by type (TOC, Ref, user-defined). |
-| **Track Changes** | Read-only access to insertions and deletions with author/date metadata. |
-| **Floating Images** | Read anchored (floating) shapes with position and size properties. |
-| **Themes** | Read theme colors and fonts from the document theme. |
-| **SVG Images** | Recognition and parsing of SVG image files. |
-| **Modern Namespaces** | Support for Word 2013+ namespaces (w14, w15, w16, etc.). |
+| Feature | Read | Write | Description |
+|---------|:----:|:-----:|-------------|
+| **Content Controls (SDT)** | ✓ | ✓ | Structured document tags - text, date, dropdown, comboBox types |
+| **Fields** | ✓ | ✓ | Simple and complex fields - PAGE, DATE, TOC, REF, HYPERLINK, etc. |
+| **Footnotes & Endnotes** | ✓ | ✓ | Full paragraph and table support in notes |
+| **Bookmarks** | ✓ | ✓ | Named locations for cross-references |
+| **Track Changes** | ✓ | ✓ | Insertions/deletions with accept/reject support |
+| **Floating Images** | ✓ | ✓ | Anchored shapes with position, wrap, and z-order |
+| **Text Boxes** | ✓ | | Content in mc:AlternateContent elements |
+| **Themes** | ✓ | ✓ | Theme colors and fonts (read and modify) |
+| **Comments** | ✓ | ✓ | Comment threads with author metadata |
+| **SVG Images** | ✓ | | Recognition and parsing of SVG files |
+| **Modern Namespaces** | ✓ | | Word 2013+ namespaces (w14, w15, w16, etc.) |
+| **Conformance Detection** | ✓ | | Detect Strict vs Transitional, Word version |
 
 ## Installation
 
@@ -76,7 +79,10 @@ pip install git+https://github.com/sverker/python-docx.git@xtend
 
 For core python-docx functionality, see the [python-docx documentation](https://python-docx.readthedocs.org/en/latest/).
 
-Extension features are documented in the `WOTAN/` directory of this repository.
+For a comprehensive API reference including all extensions, see **[WOTAN/docs/python-docx-api.md](WOTAN/docs/python-docx-api.md)**. This includes:
+- Complete API reference for all features
+- Pragmatics section with real-world document patterns
+- Tips for handling complex documents (nested content controls, machine-generated files, etc.)
 
 ## Status
 

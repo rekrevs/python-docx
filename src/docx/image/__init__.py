@@ -8,6 +8,7 @@ from docx.image.bmp import Bmp
 from docx.image.gif import Gif
 from docx.image.jpeg import Exif, Jfif
 from docx.image.png import Png
+from docx.image.svg import Svg
 from docx.image.tiff import Tiff
 
 SIGNATURES = (
@@ -20,4 +21,8 @@ SIGNATURES = (
     (Tiff, 0, b"MM\x00*"),  # big-endian (Motorola) TIFF
     (Tiff, 0, b"II*\x00"),  # little-endian (Intel) TIFF
     (Bmp, 0, b"BM"),
+    (Svg, 0, b"<?xml"),  # XML declaration
+    (Svg, 0, b"<svg"),  # Direct SVG element
+    (Svg, 0, b"\xef\xbb\xbf<?xml"),  # UTF-8 BOM + XML declaration
+    (Svg, 0, b"\xef\xbb\xbf<svg"),  # UTF-8 BOM + SVG element
 )

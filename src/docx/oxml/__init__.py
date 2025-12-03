@@ -119,6 +119,12 @@ from .coreprops import CT_CoreProperties
 
 register_element_cls("cp:coreProperties", CT_CoreProperties)
 
+from .fields import CT_FldChar, CT_FldInstrText, CT_FldSimple
+
+register_element_cls("w:fldSimple", CT_FldSimple)
+register_element_cls("w:fldChar", CT_FldChar)
+register_element_cls("w:instrText", CT_FldInstrText)
+
 from .document import CT_Body, CT_Document
 
 register_element_cls("w:body", CT_Body)

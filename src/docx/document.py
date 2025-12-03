@@ -17,6 +17,7 @@ from docx.text.run import Run
 if TYPE_CHECKING:
     import docx.types as t
     from docx.comments import Comment, Comments
+    from docx.fields import Fields
     from docx.oxml.document import CT_Body, CT_Document
     from docx.parts.document import DocumentPart
     from docx.sdt import SdtContentControls
@@ -194,6 +195,46 @@ class Document(ElementProxy):
     def core_properties(self):
         """A |CoreProperties| object providing Dublin Core properties of document."""
         return self._part.core_properties
+
+    @property
+    def fields(self) -> Fields:
+        """A |Fields| collection providing access to fields in this document.
+
+        Fields are used for dynamic content such as page numbers, dates,
+        cross-references, table of contents, citations, and more.
+
+        This collection includes both simple fields (`<w:fldSimple>`) and
+        complex fields (delimited by `<w:fldChar>` markers).
+
+        Example::
+
+            # Iterate over all fields
+            for field in document.fields:
+                print(f"{field.field_type}: {field.result}")
+
+            # Filter by type
+            for page_field in document.fields.filter_by_type("PAGE"):
+                print(f"Page number: {page_field.result}")
+
+            # Access simple vs complex fields separately
+            print(f"Simple fields: {len(document.fields.simple)}")
+            print(f"Complex fields: {len(document.fields.complex)}")
+
+        Note:
+            Field results are cached values from when the field was last
+            updated. They may be stale if the document hasn't been opened
+            in Word recently.
+        """
+        from docx.fields import Fields
+        from docx.oxml.fields import iter_complex_fields
+
+        # Get simple fields
+        simple_fields = self._element.body.xpath(".//w:fldSimple")
+
+        # Parse complex fields
+        complex_fields = iter_complex_fields(self._element.body)
+
+        return Fields(simple_fields, complex_fields)
 
     @property
     def inline_shapes(self):

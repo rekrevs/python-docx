@@ -26,6 +26,26 @@ This backlog tracks planned enhancements to bring python-docx closer to full OOX
 
 ## Tier 0: Foundation
 
+### B-TEST-02: Research Community Knowledge and Version Compatibility `[DONE]`
+
+**Intent:** Research developer forums, known issues, and OOXML version compatibility before starting implementation.
+
+**Next:** T-TEST-02 (completed)
+
+**Details:**
+- Search developer forums (Stack Overflow, GitHub issues, python-docx discussions)
+- Understand OOXML versioning (strict vs transitional, Word version differences)
+- Document known pitfalls and community solutions
+- Determine how to handle multiple format versions
+
+**Outcome:** Created `WOTAN/docs/version-compatibility.md` with comprehensive findings on:
+- OOXML Strict vs Transitional, namespace extensions (w14-w16sdtdh)
+- mc:AlternateContent handling (critical gap in python-docx)
+- How docx4j, Open XML SDK, Apache POI handle versions
+- Community workarounds and recommendations for WOTAN
+
+---
+
 ### B-TEST-01: Baseline Verification and Regression Documentation `[DONE]`
 
 **Intent:** Thoroughly test that python-docx does what it claims to do, document current state, and identify any regressions.
@@ -216,4 +236,13 @@ This backlog tracks planned enhancements to bring python-docx closer to full OOX
 
 ## Completed
 
-(None yet)
+### B-TEST-01: Baseline Verification and Regression Documentation `[DONE]`
+- All tests pass (1609 pytest, 650 behave scenarios)
+- Example documents tested and round-trip verified
+- Created `WOTAN/docs/baseline-report.md`
+- Identified advanced features in real docs (1299 fields, 348 bookmarks, 63 SDT, etc.)
+
+### B-TEST-02: Research Community Knowledge and Version Compatibility `[DONE]`
+- Researched GitHub issues, Stack Overflow, ECMA specs
+- Created `WOTAN/docs/version-compatibility.md`
+- Key finding: mc:AlternateContent is a critical gap

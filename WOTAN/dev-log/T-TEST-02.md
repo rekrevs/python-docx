@@ -1,0 +1,148 @@
+# T-TEST-02: Research Community Knowledge and Version Compatibility
+
+| Field | Value |
+|-------|-------|
+| ID | T-TEST-02 |
+| Parent | B-TEST-02 |
+| State | DONE |
+| Created | 2024-12-03 |
+| Completed | 2024-12-03 |
+
+## Objective
+
+Research developer forums, community knowledge, and OOXML version compatibility issues before starting implementation work. Document findings for future reference.
+
+## Acceptance Criteria
+
+- [x] Search python-docx GitHub issues for relevant discussions
+- [x] Search Stack Overflow for python-docx limitations and workarounds
+- [x] Research OOXML versioning (strict vs transitional, Word versions)
+- [x] Understand namespace versioning (w14, w15, w16, etc.)
+- [x] Document how other libraries handle version differences
+- [x] Create version compatibility guide in WOTAN/docs/
+
+## Context
+
+Before implementing new features, we need to understand:
+1. What problems others have encountered
+2. How OOXML versions differ
+3. Best practices for handling version differences
+
+## Research Areas
+
+1. **python-docx GitHub issues** - Known limitations, feature requests
+2. **Stack Overflow** - Common problems and workarounds
+3. **OOXML versioning** - Strict vs Transitional conformance
+4. **Word version differences** - 2007, 2010, 2013, 2016, 2019, 365
+5. **Other libraries** - How docx4j, Open XML SDK handle versions
+
+## Implementation Notes
+
+### Key GitHub Issues Found
+
+| Issue | Topic | Status | Notes |
+|-------|-------|--------|-------|
+| #1389 | mc:AlternateContent paragraphs invisible | Open | Critical gap |
+| #155 | SDT/Content Controls reading | Open (2015) | Still requested |
+| #31 | Field codes | Open (2014) | Common request |
+| #1 | Footnotes | Open (2014) | PR #624 exists |
+| #761 | SDT checkboxes | Open | User workarounds |
+| #451 | Inline shapes in AlternateContent | Open | MCE-related |
+
+### OOXML Conformance Classes
+
+- **Transitional** (default): What Word saves by default, has VML fallbacks
+- **Strict**: Pure OOXML, no legacy elements, rare in practice
+- python-docx only supports Transitional namespace
+
+### Namespace Extensions by Word Version
+
+| Namespace | Word Version | Features |
+|-----------|--------------|----------|
+| w14 | 2010 | Content controls, text effects |
+| w15 | 2013 | Charts, web extensions |
+| w16 | 2016 | Comments extended |
+| w16se | 2016 | Comments IDs |
+| w16cid | 2016+ | Comment IDs extended |
+| w16cex | 2020/365 | Comments extended |
+| w16sdtdh | 2021/365 | SDT date handling |
+| wp14 | 2010 | Anchor positioning |
+
+### Critical Finding: mc:AlternateContent
+
+Modern Word documents wrap version-specific content in `mc:AlternateContent` blocks with `mc:Choice` and `mc:Fallback` children. python-docx's `doc.paragraphs` only finds top-level `<w:p>` elements, missing paragraphs inside these blocks.
+
+This affects:
+- Text boxes
+- Modern vector graphics (DrawingML vs VML)
+- Word 2010+ specific features
+
+### How Other Libraries Handle This
+
+**docx4j (Java)**:
+- Uses mc:AlternateContent when available
+- Falls back to mc:Fallback for unsupported namespaces
+- On save, drops unsupported content (saves as Word 2007 compatible)
+- Recent versions preserve w16sdtdh to prevent Word open failures
+
+**Open XML SDK (.NET)**:
+- Has explicit AlternateContent class
+- Provides GetContentFromACBlock(block, FileFormatVersions) method
+- Can target Office2007, Office2010, Office2013
+
+**Apache POI (Java)**:
+- Uses ECMA-376 5th edition schemas
+- Requires low-level XMLBeans for content outside XWPF model
+- Acknowledges incomplete coverage
+
+### Community Workarounds
+
+1. **Raw XML navigation**: Use lxml directly to find all `<w:p>` elements
+2. **XPath for text boxes**: Custom paths to extract txbxContent
+3. **Template approach**: Create in Word, fill text with python-docx, update with win32com
+4. **bayoo-docx fork**: Has footnotes/comments (based on unmerged PR #624)
+
+## Evidence
+
+### Web Search Sources
+
+- python-docx GitHub Issues: #1389, #155, #31, #1, #761, #451
+- Stack Overflow: "Missing document text when using python-docx", field code workarounds
+- docx4j Changelog: Namespace handling updates through v8.2.9
+- Open XML SDK: AlternateContent documentation, Issue #1291
+- Apache OpenOffice Wiki: MCE specification details
+- Eric White blog: MCE overview
+- ECMA-376 specification (via c-rex.net reference)
+- ISO 29500-3 (Library of Congress format description)
+
+### Key URLs
+
+- https://github.com/python-openxml/python-docx/issues/1389
+- https://github.com/python-openxml/python-docx/issues/155
+- https://github.com/plutext/docx4j/blob/master/CHANGELOG.md
+- https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.alternatecontent
+- https://wiki.openoffice.org/wiki/OOXML/Markup_Compatibility_and_Extensibility
+
+## Outcome
+
+**DONE**
+
+Created comprehensive version compatibility guide at `WOTAN/docs/version-compatibility.md` covering:
+
+1. OOXML Strict vs Transitional conformance
+2. Word version namespace extensions (w14 through w16sdtdh)
+3. Markup Compatibility and Extensibility (MCE) mechanism
+4. The mc:AlternateContent problem and its impact
+5. How docx4j, Open XML SDK, and Apache POI handle versions
+6. Community workarounds for current limitations
+7. Recommendations for WOTAN development:
+   - Add missing namespaces to ns.py
+   - Handle mc:AlternateContent (flatten or expose)
+   - Preserve mc:Ignorable on save
+   - Add version detection
+   - Create test matrix for Word versions
+
+Key insight: Version compatibility is a real concern. docx4j effectively "downgrades" documents to Word 2007 on save. We should decide whether to:
+- Preserve original version-specific content (safer)
+- Normalize to a specific version (simpler)
+- Support explicit version targeting (most flexible)

@@ -305,6 +305,152 @@ Implemented three new properties on Document class:
 
 ---
 
+## Tier 4: Remaining Gaps
+
+### B-DRW-06: Text Box Creation `[READY]`
+
+**Intent:** Enable creating new text boxes programmatically.
+
+**Details:**
+Current state: Can read text boxes via `doc.text_boxes`, but cannot create new ones.
+
+Text boxes require:
+- `mc:AlternateContent` wrapper with Choice (DrawingML) and Fallback (VML)
+- `wp:anchor` for positioning
+- `wps:wsp` (WordprocessingShape) containing `wps:txbx` with `w:txbxContent`
+
+**Acceptance Criteria:**
+- Create text boxes with specified position and size
+- Add paragraphs and tables to text box content
+- Set border, fill, and text wrapping properties
+- Round-trip preserves structure
+
+---
+
+### B-DRW-07: Bookmark Modification `[READY]`
+
+**Intent:** Enable moving and deleting bookmarks.
+
+**Details:**
+Current state: Can read bookmarks and create new ones, but cannot modify existing bookmarks.
+
+Needed:
+- `bookmark.delete()` - Remove bookmark from document
+- `bookmark.move_to(element)` - Move bookmark to new location
+- `bookmark.set_range(start, end)` - Change bookmark range
+
+**Acceptance Criteria:**
+- Delete bookmarks by name or object
+- Move bookmark start/end to new locations
+- Change bookmark from point to range or vice versa
+
+---
+
+### B-MATH-01: Math Equations `[NEEDS-SPEC]`
+
+**Intent:** Read and create mathematical equations (OMML).
+
+**Details:**
+Office Math Markup Language (OMML) is used for equations in Word documents.
+Located in `m:oMath` and `m:oMathPara` elements.
+
+Common equation elements:
+- `m:r` - Math run (text)
+- `m:f` - Fraction
+- `m:rad` - Radical (square root)
+- `m:sSup`, `m:sSub` - Superscript/subscript
+- `m:nary` - N-ary operator (sum, integral)
+- `m:m` - Matrix
+- `m:d` - Delimiter (parentheses, brackets)
+
+**Acceptance Criteria:**
+- Read equation content as structured objects
+- Access equation components (fractions, radicals, etc.)
+- Create simple equations programmatically
+- Round-trip preserves equation structure
+
+**References:**
+- ECMA-376 Part 1, Section 22 (Office Math)
+- [OMML documentation](https://docs.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/)
+
+---
+
+### B-CHART-01: Chart Support `[NEEDS-SPEC]`
+
+**Intent:** Read and manipulate charts embedded in documents.
+
+**Details:**
+Charts in Word are DrawingML charts stored in separate parts (`/word/charts/chartN.xml`).
+Referenced via `c:chart` in drawing elements.
+
+Chart structure:
+- `c:chartSpace` - Root element
+- `c:chart` - Chart definition
+- `c:plotArea` - Plot area with axes and series
+- `c:ser` - Data series
+
+**Acceptance Criteria:**
+- Detect charts in document
+- Read chart type (bar, line, pie, etc.)
+- Access chart data series and values
+- Modify chart data
+- (Future) Create simple charts
+
+**References:**
+- ECMA-376 Part 1, Section 21.2 (DrawingML Charts)
+
+---
+
+### B-SMART-01: SmartArt Support `[NEEDS-SPEC]`
+
+**Intent:** Read SmartArt diagrams.
+
+**Details:**
+SmartArt is stored as DrawingML diagrams in separate parts.
+Complex structure with layout, data, and drawing components.
+
+Parts involved:
+- `/word/diagrams/data.xml` - Diagram data
+- `/word/diagrams/layout.xml` - Layout definition
+- `/word/diagrams/quickStyle.xml` - Quick style
+- `/word/diagrams/colors.xml` - Color scheme
+- `/word/diagrams/drawing.xml` - Visual representation
+
+**Acceptance Criteria:**
+- Detect SmartArt in document
+- Read text content from SmartArt nodes
+- Identify SmartArt type/layout
+- (Future) Modify SmartArt text content
+
+**References:**
+- ECMA-376 Part 1, Section 21.4 (DrawingML Diagrams)
+
+---
+
+### B-XML-01: Custom XML Support `[NEEDS-SPEC]`
+
+**Intent:** Read and manipulate Custom XML parts and data bindings.
+
+**Details:**
+Documents can contain custom XML data in:
+- Custom XML parts (`/customXml/itemN.xml`)
+- Custom XML data stores
+- Content controls bound to custom XML via `w:dataBinding`
+
+Used for:
+- Data-driven document generation
+- Document metadata
+- Integration with external systems
+
+**Acceptance Criteria:**
+- Read custom XML parts
+- Access custom XML data by XPath
+- Modify custom XML values
+- Create new custom XML parts
+- Understand SDT data bindings to custom XML
+
+---
+
 ## Completed
 
 ### B-TEST-01: Baseline Verification and Regression Documentation `[DONE]`

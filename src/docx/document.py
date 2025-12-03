@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from docx.oxml.document import CT_Body, CT_Document
     from docx.parts.document import DocumentPart
     from docx.revisions import Revisions
-    from docx.sdt import SdtContentControls
+    from docx.sdt import SdtBlockContentControl, SdtContentControls
     from docx.settings import Settings
     from docx.styles.style import ParagraphStyle, _TableStyle
     from docx.table import Table
@@ -307,6 +307,58 @@ class Document(ElementProxy):
         from docx.sdt import SdtContentControls
 
         return SdtContentControls(self._element.body.sdt_lst, self._part)
+
+    def add_content_control(
+        self,
+        sdt_type: str = "richText",
+        tag: str | None = None,
+        alias: str | None = None,
+        placeholder_text: str = "",
+    ) -> SdtBlockContentControl:
+        """Add a content control (structured document tag) to the document body.
+
+        Args:
+            sdt_type: The type of content control. One of 'richText', 'text', 'date',
+                     'dropDownList', 'comboBox'. Default is 'richText'.
+            tag: Optional tag value for identifying the control programmatically.
+            alias: Optional alias (title) displayed in the UI.
+            placeholder_text: Optional placeholder text for the content.
+
+        Returns:
+            The newly created SdtBlockContentControl.
+
+        Example::
+
+            # Create a rich text content control
+            cc = document.add_content_control(
+                sdt_type="richText",
+                tag="notes",
+                alias="Notes",
+                placeholder_text="Enter notes here"
+            )
+
+            # Create a dropdown list
+            cc = document.add_content_control(
+                sdt_type="dropDownList",
+                tag="status",
+                alias="Status"
+            )
+            cc.add_list_item("Draft", "draft")
+            cc.add_list_item("Final", "final")
+
+            # Create a date picker
+            cc = document.add_content_control(
+                sdt_type="date",
+                tag="due_date",
+                alias="Due Date"
+            )
+        """
+        from docx.oxml.sdt import CT_SdtBlock
+        from docx.sdt import SdtBlockContentControl
+
+        sdt = CT_SdtBlock.new(sdt_type, tag, alias, placeholder_text)
+        self._element.body.append(sdt)
+        return SdtBlockContentControl(sdt, self._part)
 
     @property
     def core_properties(self):

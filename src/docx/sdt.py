@@ -167,6 +167,31 @@ class SdtBlockContentControl(BlockItemContainer):
         """
         return "\n".join(p.text for p in self.paragraphs)
 
+    def add_list_item(self, display_text: str, value: str | None = None) -> None:
+        """Add a list item to this content control.
+
+        This is only valid for dropDownList or comboBox content controls.
+
+        Args:
+            display_text: The text displayed to the user.
+            value: The value stored when selected. Defaults to display_text if not provided.
+
+        Raises:
+            ValueError: If this content control is not a dropDownList or comboBox.
+
+        Example::
+
+            cc = document.add_content_control(
+                sdt_type="dropDownList",
+                tag="status",
+                alias="Status"
+            )
+            cc.add_list_item("Draft", "draft")
+            cc.add_list_item("In Review", "review")
+            cc.add_list_item("Final", "final")
+        """
+        self._sdt_elm.add_list_item(display_text, value)
+
 
 class SdtRunContentControl:
     """Proxy for an inline/run-level structured document tag (content control).
@@ -197,4 +222,4 @@ class SdtRunContentControl:
     @property
     def text(self) -> str:
         """Read-only. The text content of this inline content control."""
-        return self._sdt_elm.text
+        return self._sdt_elm.sdt_text

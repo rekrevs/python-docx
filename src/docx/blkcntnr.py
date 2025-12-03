@@ -22,13 +22,14 @@ if TYPE_CHECKING:
     from docx.oxml.comments import CT_Comment
     from docx.oxml.document import CT_Body
     from docx.oxml.mce import CT_TxbxContent
+    from docx.oxml.sdt import CT_SdtBlock
     from docx.oxml.section import CT_HdrFtr
     from docx.oxml.table import CT_Tc
     from docx.shared import Length
     from docx.styles.style import ParagraphStyle
     from docx.table import Table
 
-BlockItemElement: TypeAlias = "CT_Body | CT_Comment | CT_HdrFtr | CT_Tc | CT_TxbxContent"
+BlockItemElement: TypeAlias = "CT_Body | CT_Comment | CT_HdrFtr | CT_Tc | CT_TxbxContent | CT_SdtBlock"
 
 
 class BlockItemContainer(StoryChild):

@@ -16,6 +16,7 @@ from docx.text.run import Run
 if TYPE_CHECKING:
     import docx.types as t
     from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    from docx.oxml.fields import CT_FldSimple
     from docx.oxml.text.paragraph import CT_P
     from docx.styles.style import CharacterStyle
 
@@ -166,6 +167,80 @@ class Paragraph(StoryChild):
     def text(self, text: str | None):
         self.clear()
         self.add_run(text)
+
+    def add_field(
+        self,
+        field_type: str,
+        switches: str = "",
+        result: str = "",
+    ) -> CT_FldSimple:
+        """Add a simple field to the end of this paragraph.
+
+        Args:
+            field_type: The field type (e.g., 'PAGE', 'DATE', 'NUMPAGES').
+            switches: Optional field switches (e.g., r'\\@ "MMMM d, yyyy"').
+            result: Optional placeholder result text (displayed until updated in Word).
+
+        Returns:
+            The new CT_FldSimple element.
+
+        Example::
+
+            paragraph.add_field('PAGE')  # Adds page number field
+            paragraph.add_field('DATE', switches=r'\\@ "yyyy-MM-dd"')  # Date with format
+        """
+        from docx.oxml.fields import CT_FldSimple
+
+        fld_simple = CT_FldSimple.new(field_type, switches, result)
+        self._p.append(fld_simple)
+        return fld_simple
+
+    def add_page_number(self) -> CT_FldSimple:
+        """Add a PAGE field displaying the current page number.
+
+        Returns:
+            The new CT_FldSimple element.
+
+        Example::
+
+            paragraph.add_page_number()  # Displays "1", "2", etc.
+        """
+        return self.add_field("PAGE")
+
+    def add_page_count(self) -> CT_FldSimple:
+        """Add a NUMPAGES field displaying the total page count.
+
+        Returns:
+            The new CT_FldSimple element.
+
+        Example::
+
+            para = doc.add_paragraph("Page ")
+            para.add_page_number()
+            para.add_run(" of ")
+            para.add_page_count()  # "Page 1 of 5"
+        """
+        return self.add_field("NUMPAGES")
+
+    def add_date(self, format: str = "") -> CT_FldSimple:
+        """Add a DATE field displaying the current date.
+
+        Args:
+            format: Optional date format string (e.g., "yyyy-MM-dd", "MMMM d, yyyy").
+                   If not specified, uses Word's default date format.
+
+        Returns:
+            The new CT_FldSimple element.
+
+        Example::
+
+            paragraph.add_date()  # Default format
+            paragraph.add_date("yyyy-MM-dd")  # "2024-01-15"
+            paragraph.add_date("MMMM d, yyyy")  # "January 15, 2024"
+        """
+        if format:
+            return self.add_field("DATE", switches=f'\\@ "{format}"')
+        return self.add_field("DATE")
 
     def _insert_paragraph_before(self):
         """Return a newly created paragraph, inserted directly before this paragraph."""

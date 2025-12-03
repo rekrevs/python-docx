@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, cast
 
+from docx.oxml.ns import qn
 from docx.oxml.simpletypes import ST_String
-from docx.oxml.xmlchemy import BaseOxmlElement, OptionalAttribute, RequiredAttribute
+from docx.oxml.xmlchemy import BaseOxmlElement, RequiredAttribute
 
 if TYPE_CHECKING:
-    pass
+    from lxml.etree import _Element  # pyright: ignore[reportPrivateUsage]
+
+    from docx.oxml.document import CT_Body
 
 
 class ST_FldCharType(Enum):
@@ -32,6 +35,39 @@ class CT_FldSimple(BaseOxmlElement):
     """
 
     instr: str = RequiredAttribute("w:instr", ST_String)  # pyright: ignore[reportAssignmentType]
+
+    @classmethod
+    def new(cls, field_type: str, switches: str = "", result: str = "") -> CT_FldSimple:
+        """Create a new `w:fldSimple` element.
+
+        Args:
+            field_type: The field type (e.g., 'PAGE', 'DATE', 'NUMPAGES').
+            switches: Optional field switches (e.g., r'\\@ "MMMM d, yyyy"').
+            result: Optional placeholder result text (displayed until updated).
+
+        Returns:
+            A new CT_FldSimple element with a child run containing the result.
+        """
+        from docx.oxml.parser import OxmlElement
+
+        # Build instruction string
+        instr = f" {field_type}"
+        if switches:
+            instr = f"{instr} {switches}"
+        instr = f"{instr} "
+
+        # Create fldSimple element
+        fld_simple = OxmlElement("w:fldSimple")
+        fld_simple.set(qn("w:instr"), instr)
+
+        # Create child run with result text
+        r = OxmlElement("w:r")
+        t = OxmlElement("w:t")
+        t.text = result if result else ""
+        r.append(t)
+        fld_simple.append(r)
+
+        return cast("CT_FldSimple", fld_simple)
 
     @property
     def field_code(self) -> str:
@@ -101,11 +137,11 @@ class CT_FldInstrText(BaseOxmlElement):
     """
 
     @property
-    def text(self) -> str:
+    def instr_text(self) -> str:
         """The instruction text content."""
-        return self.text_content if hasattr(self, 'text_content') else (
-            super().text or ""
-        )
+        # Use lxml's text property directly - BaseOxmlElement inherits from _Element
+        text = super().text
+        return text if text is not None else ""
 
 
 class ComplexField:
@@ -156,7 +192,7 @@ class ComplexField:
         return self._end_elem is not None
 
 
-def iter_complex_fields(body_element) -> List[ComplexField]:
+def iter_complex_fields(body_element: CT_Body) -> List[ComplexField]:
     """Parse and yield all complex fields in a document body element.
 
     Complex fields are identified by matching begin/end fldChar markers
@@ -168,21 +204,21 @@ def iter_complex_fields(body_element) -> List[ComplexField]:
     Returns:
         List of ComplexField objects representing each field found.
     """
-    fields = []
-    field_stack = []  # Stack for nested fields
+    fields: List[ComplexField] = []
+    field_stack: List[tuple[_Element, str, str, bool, bool]] = []  # Stack for nested fields
 
     # Get all runs in document order
-    all_runs = body_element.xpath(".//w:r")
+    all_runs: List[_Element] = body_element.xpath(".//w:r")
 
-    current_instruction = []
-    current_result = []
+    current_instruction: List[str] = []
+    current_result: List[str] = []
     in_instruction = False
     in_result = False
-    current_begin = None
+    current_begin: _Element | None = None
 
     for run in all_runs:
         # Check for fldChar
-        fld_chars = run.xpath("./w:fldChar")
+        fld_chars: List[_Element] = run.xpath("./w:fldChar")
         for fld_char in fld_chars:
             char_type = fld_char.get(
                 "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fldCharType"
@@ -213,10 +249,10 @@ def iter_complex_fields(body_element) -> List[ComplexField]:
                 if current_begin is not None:
                     # Create field object
                     field = ComplexField(
-                        begin_elem=current_begin,
+                        begin_elem=cast(CT_FldChar, current_begin),
                         instruction="".join(current_instruction),
                         result="".join(current_result),
-                        end_elem=fld_char,
+                        end_elem=cast(CT_FldChar, fld_char),
                     )
                     fields.append(field)
 
@@ -240,12 +276,12 @@ def iter_complex_fields(body_element) -> List[ComplexField]:
 
         # Collect instruction text
         if in_instruction:
-            instr_texts = run.xpath("./w:instrText/text()")
+            instr_texts: List[str] = run.xpath("./w:instrText/text()")
             current_instruction.extend(instr_texts)
 
         # Collect result text
         if in_result:
-            result_texts = run.xpath("./w:t/text()")
+            result_texts: List[str] = run.xpath("./w:t/text()")
             current_result.extend(result_texts)
 
     return fields

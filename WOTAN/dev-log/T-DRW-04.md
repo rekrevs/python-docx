@@ -1,0 +1,122 @@
+# T-DRW-04: Implement Bookmark Creation
+
+| Field | Value |
+|-------|-------|
+| ID | T-DRW-04 |
+| Parent | B-DRW-04 |
+| State | DONE |
+| Created | 2025-12-03 |
+| Completed | 2025-12-03 |
+
+## Objective
+
+Enable creating new bookmarks programmatically via Document.add_bookmark() and related methods.
+
+## Acceptance Criteria
+
+- [x] Create named bookmarks around paragraphs
+- [x] Create bookmarks spanning multiple paragraphs
+- [x] Create point bookmarks
+- [x] Automatic unique ID generation
+- [x] Validate bookmark name uniqueness
+- [x] Bookmarks visible in Word Navigation pane
+- [x] All tests pass
+
+## Context
+
+**Specification:** `WOTAN/docs/tier2-specifications.md` - B-DRW-04 section
+
+**Current State:**
+- Can read bookmarks via `doc.bookmarks`
+- Can access by name, filter by type
+- Cannot create new bookmarks
+
+**XML Structure:**
+```xml
+<w:bookmarkStart w:id="0" w:name="MyBookmark"/>
+<w:p>
+  <w:r><w:t>Bookmarked content</w:t></w:r>
+</w:p>
+<w:bookmarkEnd w:id="0"/>
+```
+
+## Implementation Notes
+
+### Changes Made
+
+1. **src/docx/oxml/bookmarks.py**
+   - Added `CT_Bookmark.new(bookmark_id, bookmark_name)` factory method
+   - Added `CT_MarkupRange.new(bookmark_id)` factory method
+
+2. **src/docx/document.py**
+   - Added `add_bookmark(name, start, end)` method
+   - Added `_next_bookmark_id()` helper method
+   - Updated TYPE_CHECKING imports to include `Bookmark`
+
+### API
+
+```python
+# Bookmark a single paragraph
+para = document.paragraphs[0]
+bookmark = document.add_bookmark("chapter1", start=para)
+
+# Bookmark a range of paragraphs
+start_para = document.paragraphs[0]
+end_para = document.paragraphs[2]
+bookmark = document.add_bookmark("section1", start=start_para, end=end_para)
+
+# Create a point bookmark at end of document
+bookmark = document.add_bookmark("insert_point")
+```
+
+## Evidence
+
+### Test Output
+
+```
+Test 1 - Point bookmark created
+  Name: test_point, ID: 0
+Test 2 - Single paragraph bookmark
+  Name: para1_bookmark, ID: 1
+Test 3 - Range bookmark
+  Name: range_bookmark, ID: 2
+Test 4 - Duplicate check passed: A bookmark named 'test_point' already exists
+Test 5 - All bookmarks:
+  Bookmark(name='para1_bookmark', id=1)
+  Bookmark(name='range_bookmark', id=2)
+  Bookmark(name='test_point', id=0)
+Test 6 - Save and reload
+  Bookmark count: 3
+```
+
+### XML Structure Generated
+
+```xml
+<w:body>
+  <w:bookmarkStart w:id="1" w:name="para1_bookmark"/>
+  <w:p>
+    <w:r><w:t>This is paragraph 1</w:t></w:r>
+  </w:p>
+  <w:bookmarkEnd w:id="1"/>
+  <w:bookmarkStart w:id="2" w:name="range_bookmark"/>
+  <w:p>
+    <w:r><w:t>Paragraph 2</w:t></w:r>
+  </w:p>
+  <w:p>
+    <w:r><w:t>Paragraph 3</w:t></w:r>
+  </w:p>
+  <w:bookmarkEnd w:id="2"/>
+  ...
+  <w:bookmarkStart w:id="0" w:name="test_point"/>
+  <w:bookmarkEnd w:id="0"/>
+</w:body>
+```
+
+### Test Results
+
+- pytest: 1609 passed
+- behave: 67 features, 650 scenarios passed
+
+## Outcome
+
+DONE - Bookmark creation implemented with full round-trip support. Documents with new bookmarks can be saved, reopened, and the bookmarks are correctly parsed.

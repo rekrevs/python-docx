@@ -16,7 +16,7 @@ from docx.text.run import Run
 
 if TYPE_CHECKING:
     import docx.types as t
-    from docx.bookmarks import Bookmarks
+    from docx.bookmarks import Bookmark, Bookmarks
     from docx.comments import Comment, Comments
     from docx.fields import Fields
     from docx.footnotes import Endnotes, Footnotes
@@ -190,6 +190,91 @@ class Document(ElementProxy):
 
         bookmark_starts = self._element.body.xpath(".//w:bookmarkStart")
         return Bookmarks(bookmark_starts)
+
+    def add_bookmark(
+        self,
+        name: str,
+        start: Paragraph | None = None,
+        end: Paragraph | None = None,
+    ) -> Bookmark:
+        """Add a bookmark to the document.
+
+        Args:
+            name: The name for the bookmark. Must be unique within the document.
+            start: The paragraph to start the bookmark at. If None, creates a point
+                   bookmark at the end of the document body.
+            end: The paragraph to end the bookmark at. If None, uses the same
+                 paragraph as start (bookmark spans just that paragraph).
+
+        Returns:
+            The newly created Bookmark.
+
+        Raises:
+            ValueError: If a bookmark with this name already exists.
+
+        Example::
+
+            # Bookmark a single paragraph
+            para = document.paragraphs[0]
+            bookmark = document.add_bookmark("chapter1", start=para)
+
+            # Bookmark a range of paragraphs
+            start_para = document.paragraphs[0]
+            end_para = document.paragraphs[2]
+            bookmark = document.add_bookmark("section1", start=start_para, end=end_para)
+
+            # Create a point bookmark at end of document
+            bookmark = document.add_bookmark("insert_point")
+        """
+        from docx.bookmarks import Bookmark
+        from docx.oxml.bookmarks import CT_Bookmark, CT_MarkupRange
+
+        # Validate name uniqueness
+        if name in self.bookmarks:
+            raise ValueError(f"A bookmark named '{name}' already exists")
+
+        # Find next available bookmark ID
+        bookmark_id = self._next_bookmark_id()
+
+        # Create bookmark elements
+        bookmark_start = CT_Bookmark.new(bookmark_id, name)
+        bookmark_end = CT_MarkupRange.new(bookmark_id)
+
+        # Place the bookmark elements
+        body = self._element.body
+
+        if start is None:
+            # Point bookmark at end of body
+            body.append(bookmark_start)
+            body.append(bookmark_end)
+        else:
+            # Bookmark around paragraph(s)
+            start_p = start._element
+            end_p = end._element if end is not None else start_p
+
+            # Insert bookmarkStart before start paragraph
+            start_p.addprevious(bookmark_start)
+
+            # Insert bookmarkEnd after end paragraph
+            end_p.addnext(bookmark_end)
+
+        return Bookmark(bookmark_start)
+
+    def _next_bookmark_id(self) -> int:
+        """Get the next available bookmark ID.
+
+        Scans all existing bookmarkStart elements to find the maximum ID,
+        then returns max + 1.
+        """
+        bookmark_starts = self._element.body.xpath(".//w:bookmarkStart")
+        if not bookmark_starts:
+            return 0
+
+        max_id = max(
+            int(bm.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id", "0"))
+            for bm in bookmark_starts
+        )
+        return max_id + 1
 
     @property
     def comments(self) -> Comments:

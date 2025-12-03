@@ -1,0 +1,106 @@
+# T-FLD-03: Implement Field Creation
+
+| Field | Value |
+|-------|-------|
+| ID | T-FLD-03 |
+| Parent | B-FLD-03 |
+| State | DONE |
+| Created | 2025-12-03 |
+| Completed | 2025-12-03 |
+
+## Objective
+
+Enable creating new fields (PAGE, DATE, REF, etc.) programmatically via Paragraph.add_field() and Paragraph convenience methods.
+
+## Acceptance Criteria
+
+- [x] Add `add_field()` method to Paragraph class for simple fields
+- [x] Add convenience methods: `add_page_number()`, `add_page_count()`, `add_date()` to Paragraph
+- [x] Create fields with format switches
+- [x] Fields display placeholder until updated in Word
+- [x] All tests pass
+
+## Context
+
+**Specification:** `WOTAN/docs/tier2-specifications.md` - B-FLD-03 section
+
+**Current State:**
+- Can read simple and complex fields via `doc.fields`
+- OXML classes exist: CT_FldSimple, CT_FldChar, CT_FldInstrText
+- Cannot create new fields
+
+**XML Structure - Simple Field:**
+```xml
+<w:fldSimple w:instr=" PAGE ">
+  <w:r><w:t>1</w:t></w:r>
+</w:fldSimple>
+```
+
+## Implementation Notes
+
+The implementation adds field creation to the Paragraph class (not Run) because `w:fldSimple` elements are inline block-level elements that appear as siblings to runs, not inside them.
+
+### Changes Made
+
+1. **src/docx/oxml/fields.py**
+   - Added `CT_FldSimple.new()` factory method
+   - Fixed type annotations throughout file
+   - Changed `CT_FldInstrText.text` to `instr_text` to avoid conflict with lxml's text property
+
+2. **src/docx/text/paragraph.py**
+   - Added `add_field(field_type, switches, result)` method
+   - Added `add_page_number()` convenience method
+   - Added `add_page_count()` convenience method
+   - Added `add_date(format)` convenience method
+
+### API
+
+```python
+# Generic field
+paragraph.add_field('PAGE')
+paragraph.add_field('DATE', switches=r'\@ "yyyy-MM-dd"')
+
+# Convenience methods
+paragraph.add_page_number()
+paragraph.add_page_count()
+paragraph.add_date('MMMM d, yyyy')
+
+# Combined example
+para = doc.add_paragraph("Page ")
+para.add_page_number()
+para.add_run(" of ")
+para.add_page_count()
+```
+
+## Evidence
+
+### Test Output
+
+```
+Test 1 - CT_FldSimple.new():
+<w:fldSimple w:instr=" PAGE ">
+  <w:r><w:t></w:t></w:r>
+</w:fldSimple>
+
+Test 2 - Field with switches:
+<w:fldSimple w:instr=" DATE \@ &quot;yyyy-MM-dd&quot; ">
+  <w:r><w:t></w:t></w:r>
+</w:fldSimple>
+
+Test 5 - Saved and reloaded successfully
+Number of fields: 3
+  Field type: PAGE, code: PAGE
+  Field type: NUMPAGES, code: NUMPAGES
+  Field type: DATE, code: DATE \@ "MMMM d, yyyy"
+All tests passed!
+```
+
+### Test Results
+
+- pytest: 1609 passed
+- behave: 67 features, 650 scenarios passed
+- pyright: 0 errors
+
+## Outcome
+
+DONE - Field creation implemented with full round-trip support. Documents with new fields can be saved, reopened, and the fields are correctly parsed.

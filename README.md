@@ -80,6 +80,4 @@ Extension features are documented in the `WOTAN/` directory of this repository.
 
 ## Status
 
-This is an experimental fork. The extensions focus on **read support** for advanced features. Write/create support for these features is not yet implemented.
-
-All original python-docx tests pass. Extensions are additive and should not break existing functionality.
+This is an experimental fork. All original python-docx tests pass. Extensions are additive and should not break existing functionality.

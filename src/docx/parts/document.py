@@ -7,20 +7,24 @@ from typing import IO, TYPE_CHECKING, cast
 from docx.document import Document
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.parts.comments import CommentsPart
+from docx.parts.footnotes import EndnotesPart, FootnotesPart
 from docx.parts.hdrftr import FooterPart, HeaderPart
 from docx.parts.numbering import NumberingPart
 from docx.parts.settings import SettingsPart
 from docx.parts.story import StoryPart
 from docx.parts.styles import StylesPart
+from docx.parts.theme import ThemePart
 from docx.shape import InlineShapes
 from docx.shared import lazyproperty
 
 if TYPE_CHECKING:
     from docx.comments import Comments
     from docx.enum.style import WD_STYLE_TYPE
+    from docx.footnotes import Endnotes, Footnotes
     from docx.opc.coreprops import CoreProperties
     from docx.settings import Settings
     from docx.styles.style import BaseStyle
+    from docx.theme import Theme
 
 
 class DocumentPart(StoryPart):
@@ -64,9 +68,23 @@ class DocumentPart(StoryPart):
         """Remove related header part identified by `rId`."""
         self.drop_rel(rId)
 
+    @property
+    def endnotes(self) -> Endnotes:
+        """|Endnotes| object providing access to the endnotes in this document."""
+        from docx.footnotes import Endnotes
+
+        return Endnotes(self._endnotes_part)
+
     def footer_part(self, rId: str):
         """Return |FooterPart| related by `rId`."""
         return self.related_parts[rId]
+
+    @property
+    def footnotes(self) -> Footnotes:
+        """|Footnotes| object providing access to the footnotes in this document."""
+        from docx.footnotes import Footnotes
+
+        return Footnotes(self._footnotes_part)
 
     def get_style(self, style_id: str | None, style_type: WD_STYLE_TYPE) -> BaseStyle:
         """Return the style in this document matching `style_id`.
@@ -126,6 +144,17 @@ class DocumentPart(StoryPart):
         return self._styles_part.styles
 
     @property
+    def theme(self) -> Theme:
+        """A |Theme| object providing access to the document's theme.
+
+        The theme defines the color scheme, font scheme, and effects used in the document.
+        Returns a Theme object even if no theme part exists (with None/empty values).
+        """
+        from docx.theme import Theme
+
+        return Theme(self._theme_part)
+
+    @property
     def _comments_part(self) -> CommentsPart:
         """A |CommentsPart| object providing access to the comments added to this document.
 
@@ -154,6 +183,45 @@ class DocumentPart(StoryPart):
             return settings_part
 
     @property
+    def _endnotes_part(self) -> EndnotesPart | None:
+        """Instance of |EndnotesPart| for this document, or None if not present.
+
+        Unlike other parts, endnotes are read-only and we don't create them on demand.
+        """
+        try:
+            return cast(EndnotesPart, self.part_related_by(RT.ENDNOTES))
+        except KeyError:
+            return None
+
+    @property
+    def _footnotes_part(self) -> FootnotesPart | None:
+        """Instance of |FootnotesPart| for this document, or None if not present.
+
+        For read access, returns None if not present. Use `_get_or_add_footnotes_part()`
+        to create the part on demand for write access.
+        """
+        try:
+            return cast(FootnotesPart, self.part_related_by(RT.FOOTNOTES))
+        except KeyError:
+            return None
+
+    def _get_or_add_footnotes_part(self) -> FootnotesPart:
+        """Return the |FootnotesPart| for this document, creating one if needed.
+
+        Creates a new FootnotesPart with separator footnotes if one doesn't exist.
+        """
+        footnotes_part = self._footnotes_part
+        if footnotes_part is not None:
+            return footnotes_part
+
+        # Create a new footnotes part
+        package = self.package
+        assert package is not None
+        footnotes_part = FootnotesPart.default(package)
+        self.relate_to(footnotes_part, RT.FOOTNOTES)
+        return footnotes_part
+
+    @property
     def _styles_part(self) -> StylesPart:
         """Instance of |StylesPart| for this document.
 
@@ -167,3 +235,14 @@ class DocumentPart(StoryPart):
             styles_part = StylesPart.default(package)
             self.relate_to(styles_part, RT.STYLES)
             return styles_part
+
+    @property
+    def _theme_part(self) -> ThemePart | None:
+        """Instance of |ThemePart| for this document, or None if not present.
+
+        Unlike styles, themes are read-only and we don't create them on demand.
+        """
+        try:
+            return cast(ThemePart, self.part_related_by(RT.THEME))
+        except KeyError:
+            return None

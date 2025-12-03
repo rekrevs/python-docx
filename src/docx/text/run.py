@@ -18,6 +18,7 @@ from docx.text.pagebreak import RenderedPageBreak
 if TYPE_CHECKING:
     import docx.types as t
     from docx.enum.text import WD_UNDERLINE
+    from docx.footnotes import Footnote
     from docx.oxml.text.run import CT_R, CT_Text
     from docx.shared import Length
 
@@ -84,6 +85,49 @@ class Run(StoryChild):
         """Add a ``<w:tab/>`` element at the end of the run, which Word interprets as a
         tab character."""
         self._r.add_tab()
+
+    def add_footnote(self, text: str = "") -> Footnote:
+        """Add a footnote reference at this position and create the footnote content.
+
+        Args:
+            text: The text content for the footnote.
+
+        Returns:
+            The newly created Footnote object.
+
+        Example::
+
+            run = paragraph.add_run("Some text")
+            footnote = run.add_footnote("This is the footnote text.")
+        """
+        from docx.footnotes import Footnote
+        from docx.oxml.footnotes import CT_FootnoteReference
+        from docx.oxml.parser import OxmlElement
+        from docx.oxml.ns import qn
+
+        # Get the footnotes part (creates one if needed)
+        footnotes_part = self.part._get_or_add_footnotes_part()
+
+        # Add the footnote content to the footnotes part
+        footnote_elm = footnotes_part.add_footnote(text)
+        footnote_id = footnote_elm.footnote_id
+
+        # Create a new run for the footnote reference (styled)
+        r_ref = OxmlElement("w:r")
+        rPr = OxmlElement("w:rPr")
+        rStyle = OxmlElement("w:rStyle")
+        rStyle.set(qn("w:val"), "FootnoteReference")
+        rPr.append(rStyle)
+        r_ref.append(rPr)
+
+        # Add footnote reference element
+        fn_ref = CT_FootnoteReference.new(footnote_id)
+        r_ref.append(fn_ref)
+
+        # Insert the reference run after this run
+        self._r.addnext(r_ref)
+
+        return Footnote(footnote_elm, footnotes_part)
 
     def add_text(self, text: str):
         """Returns a newly appended |_Text| object (corresponding to a new ``<w:t>``

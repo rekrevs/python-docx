@@ -1,0 +1,126 @@
+# T-TEST-04: Structural Equivalence Test Suite
+
+| Field | Value |
+|-------|-------|
+| ID | T-TEST-04 |
+| Parent | B-TEST-04 |
+| State | DONE |
+| Created | 2024-12-04 |
+
+## Objective
+
+Extend the test suite with automated structural equivalence testing for round-trip preservation, covering existing test documents and generated test documents with feature combinations.
+
+## Acceptance Criteria
+
+- [x] All existing test documents pass structural equivalence
+- [x] Generated test documents cover common feature combinations
+- [x] Generated test documents cover unusual/edge-case combinations
+- [x] Tests integrated into pytest suite
+- [x] Any failures documented with root cause
+
+## Context
+
+**Building on:** T-TEST-03 structural equality methodology
+
+**Test document sources:**
+- `features/steps/test_files/*.docx` - 41 BDD test files
+- `tests/test_files/*.docx` - 4 Unit test files
+
+**Features exercised in generated documents:**
+- Common: paragraphs, tables, styles, headers/footers, sections
+- Formatting: bold, italic, font sizes, colors, underline, strikethrough
+- Edge cases: empty documents, long paragraphs, many tables, nested tables, Unicode
+
+## Implementation Notes
+
+### Files Created
+
+1. **`tests/roundtrip/__init__.py`** - Package marker
+
+2. **`tests/roundtrip/structural_equivalence.py`** - Core comparison module
+   - `EquivalenceResult` dataclass with is_equivalent, is_identical, diff details
+   - `compare_documents()` - Full ZIP-level comparison
+   - `test_roundtrip_equivalence()` - Convenience wrapper
+   - Handles: Comments/PIs, orphan content types, unused defaults, ordering
+
+3. **`tests/roundtrip/document_generators.py`** - 10 document generators
+   - basic, table, nested_table, styled, multi_section
+   - header_footer, font_formatting, mixed_content, unicode, long_document
+
+4. **`tests/roundtrip/test_existing_documents.py`** - Tests for 45 existing docs
+   - Parametrized tests for features/ and tests/ directories
+
+5. **`tests/roundtrip/test_generated_documents.py`** - Tests for generated docs
+   - Round-trip tests, double round-trip, modification persistence, edge cases
+
+### Key Fixes During Implementation
+
+1. **Comment nodes** - lxml's `for child in elem` includes Comment nodes which have callable `.tag`. Added `_is_element()` filter.
+
+2. **Orphan content types** - Test documents like `doc-no-coreprops.docx` have content type entries for non-existent parts. These are now detected and treated as non-semantic (python-docx correctly removes them).
+
+3. **Unused content type defaults** - Documents may declare content types for extensions not actually used (e.g., jpeg/bmp when only png files exist). These removals are non-semantic.
+
+## Evidence
+
+### Test Results
+
+```
+$ python -m pytest tests/roundtrip/ -v
+=============================== test session starts ===============================
+collected 77 items
+
+tests/roundtrip/test_existing_documents.py::DescribeExistingDocumentRoundTrip::it_preserves_features_test_files[...] 41 PASSED
+tests/roundtrip/test_existing_documents.py::DescribeExistingDocumentRoundTrip::it_preserves_unit_test_files[...] 4 PASSED
+tests/roundtrip/test_existing_documents.py::DescribeEquivalenceDetails::it_reports_all_test_files_found PASSED
+tests/roundtrip/test_existing_documents.py::DescribeEquivalenceDetails::it_can_test_all_documents_in_batch PASSED
+
+tests/roundtrip/test_generated_documents.py::DescribeGeneratedDocumentRoundTrip::it_preserves_generated_document_structure[...] 10 PASSED
+tests/roundtrip/test_generated_documents.py::DescribeDoubleRoundTrip::it_survives_double_roundtrip[...] 10 PASSED
+tests/roundtrip/test_generated_documents.py::DescribeModificationPersistence::it_preserves_* 4 PASSED
+tests/roundtrip/test_generated_documents.py::DescribeEdgeCases::it_handles_* 6 PASSED
+
+=============================== 77 passed in 2.66s ================================
+```
+
+### Document Coverage
+
+**Existing Documents (45):**
+- All BDD test files (41): blk-*, doc-*, fnt-*, hdr-*, num-*, par-*, run-*, sct-*, set-*, shp-*, sty-*, tab-*, tbl-*, txt-*
+- All unit test files (4): blk-inner-content, having-images, sct-inner-content, test
+
+**Generated Documents (10 generators × 3 test types):**
+- Basic features: paragraphs, formatting, alignment
+- Tables: simple, nested, many, deep nesting
+- Styles: headings, lists, quotes
+- Sections: multi-section, orientation changes
+- Headers/footers: custom content
+- Fonts: sizes, colors, decorations
+- Unicode: multi-language, special characters
+- Edge cases: empty, long content, special chars
+
+### Non-Semantic Differences (Acceptable)
+
+The following differences are detected but not treated as failures:
+
+1. **`[Content_Types].xml` reordering** - python-docx writes entries in different order (valid per OOXML spec)
+
+2. **Orphan content type removal** - Content types referencing non-existent parts are removed (e.g., `doc-no-coreprops.docx` has entry for `/docProps/core.xml` but no such file)
+
+3. **Unused default removal** - Default content types for unused extensions removed (e.g., `bmp`, `gif`, `jpeg` declarations when only `png` files exist)
+
+4. **Empty .rels removal** - Empty relationship files removed
+
+5. **Directory entry removal** - ZIP directory markers (0-byte entries) removed
+
+## Outcome
+
+**DONE**
+
+All acceptance criteria met:
+- 45/45 existing test documents pass structural equivalence
+- 10 document generators cover common feature combinations
+- 6 edge case tests cover unusual combinations
+- Tests run as part of pytest: `pytest tests/roundtrip/`
+- 77 total tests, all passing

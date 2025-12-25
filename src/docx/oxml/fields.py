@@ -74,6 +74,12 @@ class CT_FldSimple(BaseOxmlElement):
         """The field instruction code (e.g., 'PAGE', 'DATE', 'NUMPAGES')."""
         return self.instr.strip()
 
+    @field_code.setter
+    def field_code(self, value: str) -> None:
+        """Set the field instruction code."""
+        # Ensure spaces around the instruction (Word convention)
+        self.set(qn("w:instr"), f" {value.strip()} ")
+
     @property
     def field_type(self) -> str:
         """The field type (first word of the instruction).
@@ -161,11 +167,15 @@ class ComplexField:
         instruction: str,
         result: str,
         end_elem: CT_FldChar | None = None,
+        all_runs: list[_Element] | None = None,
+        separator_elem: CT_FldChar | None = None,
     ):
         self._begin_elem = begin_elem
         self._instruction = instruction
         self._result = result
         self._end_elem = end_elem
+        self._all_runs = all_runs or []  # All runs between begin and end
+        self._separator_elem = separator_elem
 
     @property
     def field_code(self) -> str:
@@ -191,6 +201,25 @@ class ComplexField:
         """True if this field has both begin and end markers."""
         return self._end_elem is not None
 
+    @property
+    def begin_run(self) -> _Element | None:
+        """The run containing the begin fldChar."""
+        parent = self._begin_elem.getparent()
+        return parent if parent is not None and parent.tag == qn("w:r") else None
+
+    @property
+    def end_run(self) -> _Element | None:
+        """The run containing the end fldChar."""
+        if self._end_elem is None:
+            return None
+        parent = self._end_elem.getparent()
+        return parent if parent is not None and parent.tag == qn("w:r") else None
+
+    @property
+    def all_runs(self) -> list[_Element]:
+        """All runs that are part of this field (between begin and end)."""
+        return self._all_runs
+
 
 def iter_complex_fields(body_element: CT_Body) -> List[ComplexField]:
     """Parse and yield all complex fields in a document body element.
@@ -205,16 +234,19 @@ def iter_complex_fields(body_element: CT_Body) -> List[ComplexField]:
         List of ComplexField objects representing each field found.
     """
     fields: List[ComplexField] = []
-    field_stack: List[tuple[_Element, str, str, bool, bool]] = []  # Stack for nested fields
+    # Stack for nested fields: (begin_elem, instruction, result, in_instr, in_result, runs, sep)
+    field_stack: List[tuple[_Element, str, str, bool, bool, List[_Element], _Element | None]] = []
 
     # Get all runs in document order
     all_runs: List[_Element] = body_element.xpath(".//w:r")
 
     current_instruction: List[str] = []
     current_result: List[str] = []
+    current_runs: List[_Element] = []
     in_instruction = False
     in_result = False
     current_begin: _Element | None = None
+    current_separator: _Element | None = None
 
     for run in all_runs:
         # Check for fldChar
@@ -234,25 +266,35 @@ def iter_complex_fields(body_element: CT_Body) -> List[ComplexField]:
                         "".join(current_result),
                         in_instruction,
                         in_result,
+                        current_runs,
+                        current_separator,
                     ))
                 current_begin = fld_char
                 current_instruction = []
                 current_result = []
+                current_runs = [run]
+                current_separator = None
                 in_instruction = True
                 in_result = False
 
             elif char_type == "separate":
+                current_separator = fld_char
                 in_instruction = False
                 in_result = True
+                if current_begin is not None:
+                    current_runs.append(run)
 
             elif char_type == "end":
                 if current_begin is not None:
+                    current_runs.append(run)
                     # Create field object
                     field = ComplexField(
                         begin_elem=cast(CT_FldChar, current_begin),
                         instruction="".join(current_instruction),
                         result="".join(current_result),
                         end_elem=cast(CT_FldChar, fld_char),
+                        all_runs=current_runs,
+                        separator_elem=cast(CT_FldChar, current_separator) if current_separator else None,
                     )
                     fields.append(field)
 
@@ -264,6 +306,8 @@ def iter_complex_fields(body_element: CT_Body) -> List[ComplexField]:
                             prev_result,
                             in_instruction,
                             in_result,
+                            current_runs,
+                            current_separator,
                         ) = field_stack.pop()
                         current_instruction = [prev_instr]
                         current_result = [prev_result]
@@ -271,8 +315,14 @@ def iter_complex_fields(body_element: CT_Body) -> List[ComplexField]:
                         current_begin = None
                         current_instruction = []
                         current_result = []
+                        current_runs = []
+                        current_separator = None
                         in_instruction = False
                         in_result = False
+
+        # Track all runs that are part of the current field
+        if current_begin is not None and run not in current_runs:
+            current_runs.append(run)
 
         # Collect instruction text
         if in_instruction:

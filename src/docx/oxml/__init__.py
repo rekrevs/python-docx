@@ -368,3 +368,22 @@ register_element_cls("mc:AlternateContent", CT_AlternateContent)
 register_element_cls("mc:Choice", CT_Choice)
 register_element_cls("mc:Fallback", CT_Fallback)
 register_element_cls("w:txbxContent", CT_TxbxContent)
+
+# ---------------------------------------------------------------------------
+# Custom XML elements
+
+from .customxml import CT_DatastoreItem, CT_DatastoreSchemaRef, CT_DatastoreSchemaRefs
+
+register_element_cls("ds:datastoreItem", CT_DatastoreItem)
+register_element_cls("ds:schemaRefs", CT_DatastoreSchemaRefs)
+register_element_cls("ds:schemaRef", CT_DatastoreSchemaRef)
+
+# ---------------------------------------------------------------------------
+# Math (OMML) elements
+
+from .math import CT_MathRun, CT_MathText, CT_OMath, CT_OMathPara
+
+register_element_cls("m:oMath", CT_OMath)
+register_element_cls("m:oMathPara", CT_OMathPara)
+register_element_cls("m:r", CT_MathRun)
+register_element_cls("m:t", CT_MathText)

@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator
 
+from docx.oxml.ns import qn
+
 if TYPE_CHECKING:
+    from lxml.etree import _Element
+
     from docx.oxml.bookmarks import CT_Bookmark
 
 
@@ -139,6 +143,55 @@ class Bookmark:
         System bookmarks have names starting with underscore.
         """
         return self.name.startswith("_")
+
+    @property
+    def bookmark_end(self) -> _Element | None:
+        """The corresponding bookmarkEnd element, or None if not found.
+
+        Searches in the parent and following siblings for a bookmarkEnd
+        with a matching id.
+        """
+        bookmark_id = self.bookmark_id
+        parent = self._bookmark_start.getparent()
+        if parent is None:
+            return None
+
+        # Search for bookmarkEnd with matching id
+        # It could be in the same parent or in ancestor's descendants
+        root = parent
+        while root.getparent() is not None:
+            root = root.getparent()
+
+        for end_elem in root.iter(qn("w:bookmarkEnd")):
+            if end_elem.get(qn("w:id")) == str(bookmark_id):
+                return end_elem
+        return None
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name of this bookmark.
+
+        Note: This only changes the bookmarkStart element's name attribute.
+        """
+        self._bookmark_start.set(qn("w:name"), value)
+
+    def delete(self) -> None:
+        """Delete this bookmark from the document.
+
+        Removes both the bookmarkStart and corresponding bookmarkEnd elements.
+        Content between them is preserved.
+        """
+        # Remove bookmarkEnd first
+        end_elem = self.bookmark_end
+        if end_elem is not None:
+            end_parent = end_elem.getparent()
+            if end_parent is not None:
+                end_parent.remove(end_elem)
+
+        # Remove bookmarkStart
+        start_parent = self._bookmark_start.getparent()
+        if start_parent is not None:
+            start_parent.remove(self._bookmark_start)
 
     def __repr__(self) -> str:
         return f"Bookmark(name='{self.name}', id={self.bookmark_id})"

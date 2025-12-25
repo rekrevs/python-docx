@@ -8,8 +8,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator
 
 from docx.enum.shape import WD_INLINE_SHAPE
-from docx.oxml.ns import nsmap
-from docx.shared import Parented
+from docx.oxml.ns import nsmap, qn
+from docx.shared import Emu, Parented
 
 if TYPE_CHECKING:
     from docx.oxml.document import CT_Body
@@ -219,3 +219,119 @@ class FloatingShape(Parented):
         if uri == nsmap["dgm"]:
             return WD_INLINE_SHAPE.SMART_ART
         return WD_INLINE_SHAPE.NOT_IMPLEMENTED
+
+    # --- Setters for modification ---
+
+    @width.setter
+    def width(self, value: Length) -> None:
+        """Set the display width of this floating shape in EMUs."""
+        extent = self._anchor.extent
+        if extent is not None:
+            extent.cx = Emu(value)
+        # Also update the picture spPr if present
+        graphic = self._anchor.graphic
+        if graphic is not None:
+            graphicData = graphic.graphicData
+            if graphicData is not None and graphicData.pic is not None:
+                graphicData.pic.spPr.cx = Emu(value)
+
+    @height.setter
+    def height(self, value: Length) -> None:
+        """Set the display height of this floating shape in EMUs."""
+        extent = self._anchor.extent
+        if extent is not None:
+            extent.cy = Emu(value)
+        # Also update the picture spPr if present
+        graphic = self._anchor.graphic
+        if graphic is not None:
+            graphicData = graphic.graphicData
+            if graphicData is not None and graphicData.pic is not None:
+                graphicData.pic.spPr.cy = Emu(value)
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the name of this shape."""
+        docPr = self._anchor.docPr
+        if docPr is not None:
+            docPr.name = value
+
+    @description.setter
+    def description(self, value: str) -> None:
+        """Set the description (alt text) of this shape."""
+        docPr = self._anchor.docPr
+        if docPr is not None:
+            docPr.set(qn("descr"), value)
+
+    @is_behind_text.setter
+    def is_behind_text(self, value: bool) -> None:
+        """Set whether this shape is positioned behind document text."""
+        self._anchor.set("behindDoc", "1" if value else "0")
+
+    @property
+    def pos_x(self) -> Length | None:
+        """The horizontal position offset in EMUs, or None if not set."""
+        posH = self._anchor.find(qn("wp:positionH"))
+        if posH is not None:
+            offset = posH.find(qn("wp:posOffset"))
+            if offset is not None and offset.text:
+                return Emu(int(offset.text))
+        return None
+
+    @pos_x.setter
+    def pos_x(self, value: Length) -> None:
+        """Set the horizontal position offset in EMUs."""
+        posH = self._anchor.find(qn("wp:positionH"))
+        if posH is not None:
+            offset = posH.find(qn("wp:posOffset"))
+            if offset is not None:
+                offset.text = str(int(value))
+
+    @property
+    def pos_y(self) -> Length | None:
+        """The vertical position offset in EMUs, or None if not set."""
+        posV = self._anchor.find(qn("wp:positionV"))
+        if posV is not None:
+            offset = posV.find(qn("wp:posOffset"))
+            if offset is not None and offset.text:
+                return Emu(int(offset.text))
+        return None
+
+    @pos_y.setter
+    def pos_y(self, value: Length) -> None:
+        """Set the vertical position offset in EMUs."""
+        posV = self._anchor.find(qn("wp:positionV"))
+        if posV is not None:
+            offset = posV.find(qn("wp:posOffset"))
+            if offset is not None:
+                offset.text = str(int(value))
+
+    @property
+    def wrap_type(self) -> str | None:
+        """The text wrapping style, or None if not recognized.
+
+        Returns one of: 'none', 'square', 'tight', 'through', 'topAndBottom'
+        """
+        wrap_elements = {
+            qn("wp:wrapNone"): "none",
+            qn("wp:wrapSquare"): "square",
+            qn("wp:wrapTight"): "tight",
+            qn("wp:wrapThrough"): "through",
+            qn("wp:wrapTopAndBottom"): "topAndBottom",
+        }
+        for tag, wrap_name in wrap_elements.items():
+            if self._anchor.find(tag) is not None:
+                return wrap_name
+        return None
+
+    def delete(self) -> None:
+        """Delete this floating shape from the document.
+
+        Removes the entire anchor element and its containing drawing element.
+        """
+        # The anchor is inside w:drawing, which is inside w:r
+        # We remove the entire w:drawing element
+        drawing = self._anchor.getparent()
+        if drawing is not None:
+            run = drawing.getparent()
+            if run is not None:
+                run.remove(drawing)

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import IO, TYPE_CHECKING, cast
+from typing import IO, TYPE_CHECKING, List, Tuple, cast
 
 from docx.document import Document
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.parts.comments import CommentsPart
+from docx.parts.customxml import CustomXmlPart, CustomXmlPropertiesPart
 from docx.parts.footnotes import EndnotesPart, FootnotesPart
 from docx.parts.hdrftr import FooterPart, HeaderPart
 from docx.parts.numbering import NumberingPart
@@ -18,7 +19,10 @@ from docx.shape import InlineShapes
 from docx.shared import lazyproperty
 
 if TYPE_CHECKING:
+    from lxml import etree
+
     from docx.comments import Comments
+    from docx.customxml import CustomXmlParts
     from docx.enum.style import WD_STYLE_TYPE
     from docx.footnotes import Endnotes, Footnotes
     from docx.opc.coreprops import CoreProperties
@@ -246,3 +250,64 @@ class DocumentPart(StoryPart):
             return cast(ThemePart, self.part_related_by(RT.THEME))
         except KeyError:
             return None
+
+    @property
+    def custom_xml_parts(self) -> CustomXmlParts:
+        """A |CustomXmlParts| collection of custom XML parts in this document.
+
+        Custom XML parts contain arbitrary XML data that can be bound to content
+        controls for data-driven document generation.
+        """
+        from docx.customxml import CustomXmlParts
+
+        parts: List[Tuple[CustomXmlPart, CustomXmlPropertiesPart | None]] = []
+        package = self.package
+        if package is None:
+            return CustomXmlParts(parts)
+
+        # Find all custom XML parts by relationship type
+        for rel in package.iter_rels():
+            if rel.is_external:
+                continue
+            if rel.reltype == RT.CUSTOM_XML:
+                xml_part = cast(CustomXmlPart, rel.target_part)
+                # Try to find the associated properties part
+                props_part: CustomXmlPropertiesPart | None = None
+                try:
+                    props_part = cast(
+                        CustomXmlPropertiesPart,
+                        xml_part.part_related_by(RT.CUSTOM_XML_PROPS),
+                    )
+                except (KeyError, AttributeError):
+                    pass
+                parts.append((xml_part, props_part))
+
+        return CustomXmlParts(parts)
+
+    def add_custom_xml(
+        self, xml_element: "etree._Element"
+    ) -> tuple[CustomXmlPart, CustomXmlPropertiesPart]:
+        """Add a new custom XML part to the document.
+
+        Args:
+            xml_element: The root XML element for the custom XML content.
+
+        Returns:
+            A tuple of (CustomXmlPart, CustomXmlPropertiesPart).
+        """
+        # Determine the next item number by checking existing custom XML parts
+        package = self.package
+        assert package is not None
+
+        item_num = 1
+        existing_parts = list(self.custom_xml_parts)
+        if existing_parts:
+            item_num = len(existing_parts) + 1
+
+        # Create the custom XML and properties parts
+        xml_part, props_part = CustomXmlPart.new(package, xml_element, item_num)
+
+        # Add relationship from package to custom XML part
+        package.rels.get_or_add(RT.CUSTOM_XML, xml_part)
+
+        return xml_part, props_part

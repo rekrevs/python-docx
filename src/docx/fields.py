@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, List
 
 if TYPE_CHECKING:
+    from lxml.etree import _Element
+
     from docx.oxml.fields import ComplexField, CT_FldSimple
 
 
@@ -124,6 +126,57 @@ class SimpleField:
         """Always False for simple fields."""
         return False
 
+    @field_code.setter
+    def field_code(self, value: str) -> None:
+        """Set the field instruction code.
+
+        This changes what the field displays when updated. The result text
+        will not change until the field is updated in Word.
+
+        Example::
+
+            field.field_code = "NUMPAGES"  # Change PAGE to NUMPAGES
+        """
+        self._fld_simple.field_code = value
+
+    def delete(self) -> None:
+        """Delete this field from the document.
+
+        Removes the entire field element including its content.
+        """
+        parent = self._fld_simple.getparent()
+        if parent is not None:
+            parent.remove(self._fld_simple)
+
+    def convert_to_text(self) -> str:
+        """Convert this field to static text.
+
+        Replaces the field with a run containing the field's current result text.
+        Returns the result text that was preserved.
+
+        Example::
+
+            text = field.convert_to_text()  # Field replaced with "Page 1"
+        """
+        from docx.oxml.parser import OxmlElement
+
+        result_text = self.result
+        parent = self._fld_simple.getparent()
+
+        if parent is not None:
+            # Create a new run with the result text
+            r = OxmlElement("w:r")
+            t = OxmlElement("w:t")
+            t.text = result_text
+            r.append(t)
+
+            # Replace field with run
+            parent_idx = list(parent).index(self._fld_simple)
+            parent.remove(self._fld_simple)
+            parent.insert(parent_idx, r)
+
+        return result_text
+
 
 class ComplexFieldProxy:
     """Proxy for a complex field.
@@ -202,3 +255,57 @@ class ComplexFieldProxy:
         documents and their behavior is undefined.
         """
         return self._complex_field.is_complete
+
+    def delete(self) -> None:
+        """Delete this field from the document.
+
+        Removes all runs that are part of this field (from begin to end marker).
+        """
+        for run in self._complex_field.all_runs:
+            parent = run.getparent()
+            if parent is not None:
+                parent.remove(run)
+
+    def convert_to_text(self) -> str:
+        """Convert this field to static text.
+
+        Removes all field structure, leaving only the result text.
+        Returns the result text that was preserved.
+
+        Example::
+
+            text = field.convert_to_text()  # Field replaced with its result
+        """
+        from docx.oxml.parser import OxmlElement
+
+        result_text = self.result
+        runs = self._complex_field.all_runs
+
+        if not runs:
+            return result_text
+
+        # Find the parent (paragraph) of the first run
+        first_run = runs[0]
+        parent = first_run.getparent()
+
+        if parent is None:
+            return result_text
+
+        # Find the insertion point (before first run)
+        insert_idx = list(parent).index(first_run)
+
+        # Remove all field runs
+        for run in runs:
+            run_parent = run.getparent()
+            if run_parent is not None:
+                run_parent.remove(run)
+
+        # Create a new run with the result text
+        if result_text:
+            r = OxmlElement("w:r")
+            t = OxmlElement("w:t")
+            t.text = result_text
+            r.append(t)
+            parent.insert(insert_idx, r)
+
+        return result_text

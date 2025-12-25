@@ -17,18 +17,22 @@ from docx.text.run import Run
 if TYPE_CHECKING:
     import docx.types as t
     from docx.bookmarks import Bookmark, Bookmarks
+    from docx.chart import Charts
     from docx.comments import Comment, Comments
+    from docx.customxml import CustomXml, CustomXmlParts
     from docx.fields import Fields
     from docx.footnotes import Endnotes, Footnotes
+    from docx.math import MathEquations
     from docx.oxml.document import CT_Body, CT_Document
     from docx.parts.document import DocumentPart
     from docx.revisions import Revisions
     from docx.sdt import SdtBlockContentControl, SdtContentControls
     from docx.settings import Settings
+    from docx.smartart import SmartArtCollection
     from docx.styles.style import ParagraphStyle, _TableStyle
     from docx.table import Table
     from docx.text.paragraph import Paragraph
-    from docx.textbox import TextBoxes
+    from docx.textbox import TextBox, TextBoxes
 
 
 class Document(ElementProxy):
@@ -220,6 +224,76 @@ class Document(ElementProxy):
         run._r.add_drawing(anchor)
         return FloatingShape(anchor, self._part)
 
+    def add_text_box(
+        self,
+        width: int | Length,
+        height: int | Length,
+        pos_x: int | Length = Emu(0),
+        pos_y: int | Length = Emu(0),
+        wrap_type: str = "square",
+    ) -> "TextBox":
+        """Return a new text box added in its own paragraph.
+
+        The text box is positioned as a floating shape and can contain
+        paragraphs and tables.
+
+        Args:
+            width: Width of the text box in EMUs (or Inches, Pt, etc.).
+            height: Height of the text box in EMUs (or Inches, Pt, etc.).
+            pos_x: Horizontal position offset in EMUs (default 0).
+            pos_y: Vertical position offset in EMUs (default 0).
+            wrap_type: Text wrapping style. One of:
+                - 'none': No wrapping (text box floats over text)
+                - 'square': Square wrapping
+                - 'topAndBottom': Text flows above and below only
+
+        Returns:
+            TextBox: The newly created text box.
+
+        Example::
+
+            from docx.shared import Inches
+
+            # Add a text box
+            text_box = document.add_text_box(
+                width=Inches(3),
+                height=Inches(2),
+                pos_x=Inches(1),
+                pos_y=Inches(1),
+            )
+
+            # Add content to the text box
+            text_box.add_paragraph('Hello from the text box!')
+            text_box.add_paragraph('This is a second paragraph.')
+        """
+        from docx.oxml.mce import CT_AlternateContent
+        from docx.textbox import TextBox
+
+        # Get next shape ID
+        shape_id = self._part.next_id
+
+        # Convert to int if Length objects
+        cx = int(width) if hasattr(width, "__int__") else width
+        cy = int(height) if hasattr(height, "__int__") else height
+        px = int(pos_x) if hasattr(pos_x, "__int__") else pos_x
+        py = int(pos_y) if hasattr(pos_y, "__int__") else pos_y
+
+        # Create the text box XML structure
+        ac = CT_AlternateContent.new_textbox(
+            shape_id=shape_id,
+            cx=Emu(cx),
+            cy=Emu(cy),
+            pos_x=Emu(px),
+            pos_y=Emu(py),
+            wrap_type=wrap_type,
+        )
+
+        # Add to a paragraph run
+        run = self.add_paragraph().add_run()
+        run._r.append(ac)
+
+        return TextBox(ac, self._part)
+
     def add_section(self, start_type: WD_SECTION = WD_SECTION.NEW_PAGE):
         """Return a |Section| object newly added at the end of the document.
 
@@ -354,6 +428,56 @@ class Document(ElementProxy):
         return max_id + 1
 
     @property
+    def charts(self) -> Charts:
+        """A |Charts| collection of charts embedded in this document.
+
+        Charts are DrawingML objects that display data visually. This collection
+        provides read-only access to detect charts and examine their basic properties.
+
+        Example::
+
+            # Check for charts
+            if document.charts:
+                print(f"Found {len(document.charts)} charts")
+
+            # Iterate over charts
+            for chart in document.charts:
+                print(f"Type: {chart.chart_type}")
+                print(f"Title: {chart.title}")
+                print(f"Series: {chart.series_count}")
+
+        Note:
+            This provides detection and basic metadata only. Full chart manipulation
+            requires access to the embedded chart part and its data.
+        """
+        from docx.chart import Charts
+        from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+        body = self._element.body
+        chart_elements = []
+
+        # Find all c:chart references in drawings
+        # Charts are referenced via r:id in a:graphicData with chart URI
+        chart_refs = body.xpath(
+            ".//c:chart",
+        )
+
+        # For each chart reference, try to get the actual chart part
+        for chart_ref in chart_refs:
+            # Get the r:id attribute
+            r_id = chart_ref.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")
+            if r_id:
+                try:
+                    # Get the related chart part
+                    chart_part = self._part.related_parts.get(r_id)
+                    if chart_part is not None:
+                        chart_elements.append(chart_part.element)
+                except (KeyError, AttributeError):
+                    pass
+
+        return Charts(chart_elements)
+
+    @property
     def comments(self) -> Comments:
         """A |Comments| object providing access to comments added to the document."""
         return self._part.comments
@@ -441,6 +565,81 @@ class Document(ElementProxy):
     def core_properties(self):
         """A |CoreProperties| object providing Dublin Core properties of document."""
         return self._part.core_properties
+
+    @property
+    def custom_xml_parts(self) -> CustomXmlParts:
+        """A |CustomXmlParts| collection of custom XML parts in this document.
+
+        Custom XML parts store arbitrary XML data that can be bound to content
+        controls for data-driven document generation.
+
+        Example::
+
+            # Iterate over custom XML parts
+            for custom_xml in document.custom_xml_parts:
+                print(f"Item ID: {custom_xml.item_id}")
+                print(f"Schemas: {custom_xml.schema_uris}")
+
+            # Get by item ID (GUID)
+            cxml = document.custom_xml_parts.get_by_item_id("{C66AC4F1-97D3-...}")
+            if cxml:
+                name = cxml.get_text("/customer/name")
+
+            # Get by root element namespace
+            cxml = document.custom_xml_parts.get_by_namespace("http://example.com/schema")
+
+            # Query with XPath
+            for cxml in document.custom_xml_parts:
+                values = cxml.xpath("//item/value/text()")
+        """
+        return self._part.custom_xml_parts
+
+    def add_custom_xml(
+        self,
+        xml_content: str | bytes,
+        namespace: str | None = None,
+        root_tag: str = "root",
+    ) -> "CustomXml":
+        """Add a new custom XML part to the document.
+
+        Args:
+            xml_content: Either a complete XML string/bytes, or a dict-like
+                        structure to be converted to XML.
+            namespace: Optional namespace URI for the root element.
+            root_tag: Tag name for the root element if creating from scratch.
+
+        Returns:
+            A CustomXml object providing access to the new custom XML part.
+
+        Example::
+
+            # Add from XML string
+            custom_xml = document.add_custom_xml('''
+                <customer>
+                    <name>ACME Corp</name>
+                    <contact>John Doe</contact>
+                </customer>
+            ''')
+
+            # Access the item ID (for content control binding)
+            print(f"Item ID: {custom_xml.item_id}")
+
+            # Update values
+            custom_xml.set_text("/customer/name", "New Corp")
+        """
+        from lxml import etree
+
+        from docx.customxml import CustomXml
+
+        # Parse or create the XML element
+        if isinstance(xml_content, str):
+            xml_content = xml_content.encode("utf-8")
+        xml_element = etree.fromstring(xml_content)
+
+        # Add to document
+        xml_part, props_part = self._part.add_custom_xml(xml_element)
+
+        return CustomXml(xml_part, props_part)
 
     @property
     def fields(self) -> Fields:
@@ -563,6 +762,47 @@ class Document(ElementProxy):
         """
         return self._part.inline_shapes
 
+    @property
+    def math_equations(self) -> MathEquations:
+        """A |MathEquations| collection of math equations in this document.
+
+        Math equations use Office Math Markup Language (OMML). This collection
+        provides read-only access to all math zones in the document.
+
+        Example::
+
+            # Check for math equations
+            if document.math_equations:
+                print(f"Found {len(document.math_equations)} equations")
+
+            # Iterate over all equations
+            for eq in document.math_equations:
+                print(f"{'Block' if eq.is_block else 'Inline'}: {eq.text}")
+
+            # Access inline vs block equations separately
+            for eq in document.math_equations.inline:
+                print(f"Inline: {eq.text}")
+            for eq in document.math_equations.block:
+                print(f"Block: {eq.text}")
+        """
+        from docx.math import MathEquations
+
+        body = self._element.body
+
+        # Find m:oMath elements that are NOT children of m:oMathPara
+        # These are inline equations
+        all_omath = body.xpath(".//m:oMath")
+        math_ns = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
+        inline_omath = [
+            elem for elem in all_omath
+            if elem.getparent() is None or elem.getparent().tag != f"{math_ns}oMathPara"
+        ]
+
+        # Find m:oMathPara elements (block-level equations)
+        omathpara = body.xpath(".//m:oMathPara")
+
+        return MathEquations(inline_omath, omathpara)
+
     def iter_inner_content(self) -> Iterator[Paragraph | Table]:
         """Generate each `Paragraph` or `Table` in this document in document order."""
         return self._body.iter_inner_content()
@@ -636,6 +876,53 @@ class Document(ElementProxy):
     def settings(self) -> Settings:
         """A |Settings| object providing access to the document-level settings."""
         return self._part.settings
+
+    @property
+    def smartart(self) -> SmartArtCollection:
+        """A |SmartArtCollection| of SmartArt diagrams in this document.
+
+        SmartArt diagrams are complex graphical objects that display information
+        in organized layouts (hierarchies, cycles, lists, etc.).
+
+        Example::
+
+            # Check for SmartArt
+            if document.smartart:
+                print(f"Found {len(document.smartart)} SmartArt diagrams")
+
+            # Iterate and extract text
+            for diagram in document.smartart:
+                print(f"Nodes: {diagram.node_count}")
+                print(f"Text: {diagram.text}")
+
+        Note:
+            This provides detection and text extraction only. SmartArt layout
+            and styling information is stored in separate parts.
+        """
+        from docx.smartart import SmartArtCollection
+
+        body = self._element.body
+        smartart_elements = []
+
+        # Find all dgm:relIds elements (SmartArt references)
+        dgm_rel_ids = body.xpath(".//dgm:relIds")
+
+        # For each SmartArt reference, try to get the data model part
+        for rel_ids in dgm_rel_ids:
+            # Get the r:dm (data model) relationship ID
+            dm_id = rel_ids.get(
+                "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}dm"
+            )
+            if dm_id:
+                try:
+                    # Get the related data model part
+                    dm_part = self._part.related_parts.get(dm_id)
+                    if dm_part is not None:
+                        smartart_elements.append(dm_part.element)
+                except (KeyError, AttributeError):
+                    pass
+
+        return SmartArtCollection(smartart_elements)
 
     @property
     def styles(self):

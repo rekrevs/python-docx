@@ -44,6 +44,82 @@ class Paragraph(StoryChild):
             run.style = style
         return run
 
+    def add_math(self, text: str) -> None:
+        """Append an inline math equation containing `text`.
+
+        Creates an m:oMath element with the given text content. For simple
+        math expressions, use this method. For complex equations, use the
+        specialized methods like add_math_fraction(), add_math_superscript(), etc.
+
+        Example::
+
+            paragraph.add_math("x + y = z")
+        """
+        from docx.oxml.math import CT_OMath
+
+        omath = CT_OMath.new_with_text(text)
+        self._p.append(omath)
+
+    def add_math_fraction(self, numerator: str, denominator: str) -> None:
+        """Append an inline math fraction.
+
+        Example::
+
+            paragraph.add_math_fraction("a", "b")  # Creates a/b
+        """
+        from docx.oxml.math import CT_OMath
+
+        omath = CT_OMath.new_fraction(numerator, denominator)
+        self._p.append(omath)
+
+    def add_math_superscript(self, base: str, superscript: str) -> None:
+        """Append an inline math expression with a superscript.
+
+        Example::
+
+            paragraph.add_math_superscript("x", "2")  # Creates x²
+        """
+        from docx.oxml.math import CT_OMath
+
+        omath = CT_OMath.new_superscript(base, superscript)
+        self._p.append(omath)
+
+    def add_math_subscript(self, base: str, subscript: str) -> None:
+        """Append an inline math expression with a subscript.
+
+        Example::
+
+            paragraph.add_math_subscript("x", "i")  # Creates xᵢ
+        """
+        from docx.oxml.math import CT_OMath
+
+        omath = CT_OMath.new_subscript(base, subscript)
+        self._p.append(omath)
+
+    def add_math_sqrt(self, content: str) -> None:
+        """Append an inline square root.
+
+        Example::
+
+            paragraph.add_math_sqrt("x")  # Creates √x
+        """
+        from docx.oxml.math import CT_OMath
+
+        omath = CT_OMath.new_sqrt(content)
+        self._p.append(omath)
+
+    def add_math_nthroot(self, content: str, degree: str) -> None:
+        """Append an inline nth root.
+
+        Example::
+
+            paragraph.add_math_nthroot("x", "3")  # Creates ³√x
+        """
+        from docx.oxml.math import CT_OMath
+
+        omath = CT_OMath.new_nthroot(content, degree)
+        self._p.append(omath)
+
     @property
     def alignment(self) -> WD_PARAGRAPH_ALIGNMENT | None:
         """A member of the :ref:`WdParagraphAlignment` enumeration specifying the

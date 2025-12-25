@@ -2,6 +2,8 @@
 
 This document tracks the current implementation status of python-docx features and WOTAN extensions.
 
+**Last updated:** 2025-12-03
+
 ## Core python-docx (Upstream)
 
 ### Fully Implemented
@@ -31,34 +33,40 @@ This document tracks the current implementation status of python-docx features a
 |---------|--------|------------|
 | Numbering | Read-only | Cannot create new definitions |
 | Settings | Minimal | Only `evenAndOddHeaders` exposed |
-| Floating images | Registered | `wp:anchor` not functional |
 | Table borders | Basic | Limited style options |
-
-### Not Implemented
-
-| Feature | Priority | Backlog Item |
-|---------|----------|--------------|
-| Content controls (SDT) | High | B-SDT-01 |
-| Fields | High | B-FLD-01 |
-| Footnotes/Endnotes | High | B-FN-01 |
-| Bookmarks | Medium | B-DRW-01 |
-| Track changes | Medium | B-REV-01 |
-| Math equations | Low | - |
-| Charts | Low | - |
-| SmartArt | Low | - |
-| Themes | Low | - |
 
 ---
 
 ## WOTAN Extensions
 
-### In Progress
+### Fully Implemented
 
-(None yet)
+| Feature | Read | Modify | Create | Notes |
+|---------|:----:|:------:|:------:|-------|
+| **Content Controls (SDT)** | ✅ | ✅ | ✅ | text, richText, date, dropDownList, comboBox |
+| **Simple Fields** | ✅ | ✅ | ✅ | PAGE, DATE, etc. with delete/convert_to_text |
+| **Complex Fields** | ✅ | ✅ | ✅ | TOC, REF, HYPERLINK with delete/convert_to_text |
+| **Footnotes** | ✅ | ✅ | ✅ | Full paragraph/table support |
+| **Endnotes** | ✅ | ✅ | ✅ | Full paragraph/table support |
+| **Bookmarks** | ✅ | ✅ | ✅ | Rename, delete, create |
+| **Track Changes** | ✅ | ✅ | — | Accept/reject individual or all |
+| **Floating Shapes** | ✅ | ✅ | ✅ | Resize, reposition, rename, delete |
+| **Text Boxes** | ✅ | ✅ | ✅ | mc:AlternateContent with Choice/Fallback |
+| **Theme Colors** | ✅ | ✅ | — | All 12 theme colors |
+| **Theme Fonts** | ✅ | ✅ | — | Major/minor latin, east asian, complex |
+| **Math Equations** | ✅ | ✅ | ✅ | OMML iteration and creation |
+| **Charts** | ✅ | — | — | Detection and name access |
+| **SmartArt** | ✅ | — | — | Detection and name access |
+| **Custom XML** | ✅ | ✅ | ✅ | Full part CRUD |
+| **SVG Images** | ✅ | — | — | Detection and parsing |
+| **Conformance Detection** | ✅ | n/a | n/a | Strict vs Transitional |
+| **Word Version Detection** | ✅ | n/a | n/a | Word 2007 through 2021+ |
+| **Modern Namespaces** | ✅ | n/a | n/a | w14, w15, w16, w16cex, w16cid, etc. |
 
-### Completed
+### Legend
 
-(None yet)
+- ✅ = Full support
+- — = Not applicable or not yet implemented
 
 ---
 
@@ -113,13 +121,19 @@ This document tracks the current implementation status of python-docx features a
 | Namespace | Prefix | Status |
 |-----------|--------|--------|
 | WordprocessingML 2006 | `w` | Full |
-| Word 2010 | `w14` | Defined |
-| Word 2013 | `w15` | Not defined |
-| Word 2018 | `w16` | Not defined |
-| DrawingML | `a` | Partial |
+| Word 2010 | `w14` | Full |
+| Word 2013 | `w15` | Full |
+| Word 2018 | `w16` | Full |
+| Word 2020 extensions | `w16cex`, `w16cid`, `w16sdtdh`, `w16se` | Full |
+| DrawingML | `a`, `a14` | Full |
 | Pictures | `pic` | Full |
-| WordprocessingDrawing | `wp` | Partial |
-| Charts | `c` | Detection only |
-| Diagrams | `dgm` | Detection only |
-| Math | `m` | Preserved |
+| WordprocessingDrawing | `wp`, `wp14` | Full |
+| WordprocessingShape | `wps` | Full |
+| Charts | `c` | Detection |
+| Diagrams | `dgm` | Detection |
+| Math | `m` | Full |
 | Relationships | `r` | Full |
+| Custom XML | `ds` | Full |
+| VML | `v`, `o` | Full |
+| SVG | `asvg` | Full |
+| Markup Compatibility | `mc` | Full |

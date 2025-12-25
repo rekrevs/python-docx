@@ -13,13 +13,17 @@ This fork adds the following capabilities:
 | **Content Controls (SDT)** | ✓ | ✓ | Structured document tags - text, date, dropdown, comboBox types |
 | **Fields** | ✓ | ✓ | Simple and complex fields - PAGE, DATE, TOC, REF, HYPERLINK, etc. |
 | **Footnotes & Endnotes** | ✓ | ✓ | Full paragraph and table support in notes |
-| **Bookmarks** | ✓ | ✓ | Named locations for cross-references |
+| **Bookmarks** | ✓ | ✓ | Named locations with rename/delete support |
 | **Track Changes** | ✓ | ✓ | Insertions/deletions with accept/reject support |
-| **Floating Images** | ✓ | ✓ | Anchored shapes with position, wrap, and z-order |
-| **Text Boxes** | ✓ | | Content in mc:AlternateContent elements |
+| **Floating Images** | ✓ | ✓ | Anchored shapes with full modification support |
+| **Text Boxes** | ✓ | ✓ | Content in mc:AlternateContent elements |
 | **Themes** | ✓ | ✓ | Theme colors and fonts (read and modify) |
 | **Comments** | ✓ | ✓ | Comment threads with author metadata |
 | **SVG Images** | ✓ | | Recognition and parsing of SVG files |
+| **Math Equations** | ✓ | ✓ | OMML equations with creation and iteration |
+| **Charts** | ✓ | | Embedded chart detection and access |
+| **SmartArt** | ✓ | | SmartArt diagram detection and access |
+| **Custom XML** | ✓ | ✓ | Custom XML parts with read/write support |
 | **Modern Namespaces** | ✓ | | Word 2013+ namespaces (w14, w15, w16, etc.) |
 | **Conformance Detection** | ✓ | | Detect Strict vs Transitional, Word version |
 
@@ -73,6 +77,38 @@ pip install git+https://github.com/sverker/python-docx.git@xtend
 # Access theme
 >>> print(doc.theme.colors.accent1)  # RGBColor
 >>> print(doc.theme.fonts.minor_latin)  # Font name
+
+# Access math equations
+>>> for eq in doc.equations:
+...     print(eq.latex)
+
+# Access charts
+>>> for chart in doc.charts:
+...     print(chart.name)
+
+# Access SmartArt
+>>> for smartart in doc.smartart_objects:
+...     print(smartart.name)
+
+# Create a text box
+>>> text_box = doc.add_text_box(Inches(2), Inches(1))
+>>> text_box.paragraphs[0].text = "Hello!"
+
+# Modify floating shapes
+>>> shape = doc.floating_shapes[0]
+>>> shape.width = Inches(3)
+>>> shape.pos_x = Inches(1)
+>>> shape.delete()  # Remove from document
+
+# Modify bookmarks
+>>> bookmark = doc.bookmarks.get("MyBookmark")
+>>> bookmark.name = "NewName"  # Rename
+>>> bookmark.delete()  # Remove from document
+
+# Modify fields
+>>> field = doc.fields[0]
+>>> field.delete()  # Remove field
+>>> field.convert_to_text()  # Convert to static text
 ```
 
 ## Documentation

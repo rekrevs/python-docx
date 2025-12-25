@@ -9,3 +9,4 @@ _scratch/
 Session.vim
 /.tox/
 .DS_Store
+WOTAN/example-docs/

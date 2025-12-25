@@ -40,29 +40,33 @@ These elements are now accessible through the extended API:
 
 | Element | In Test Docs | Read | Modify | Create |
 |---------|--------------|------|--------|--------|
-| **Fields** (TOC, page#, cross-ref) | 1299 | ✅ | ⚠️ | ✅ |
+| **Fields** (TOC, page#, cross-ref) | 1299 | ✅ | ✅ | ✅ |
 | **Content Controls** (SDT) | 63 | ✅ | ✅ | ✅ |
-| **Bookmarks** | 348 | ✅ | ❌ | ✅ |
+| **Bookmarks** | 348 | ✅ | ✅ | ✅ |
 | **Footnotes/Endnotes** | 14 | ✅ | ✅ | ✅ |
-| **Track Changes** | 43 | ✅ | ✅ | ❌ |
-| **Floating shapes** | 86+ | ✅ | ⚠️ | ✅ |
-| **Text boxes** | 3+ | ✅ | ✅ | ❌ |
-| **Theme colors/fonts** | all | ✅ | ✅ | ❌ |
-| **SVG images** | ? | ✅ | ❌ | ❌ |
+| **Track Changes** | 43 | ✅ | ✅ | — |
+| **Floating shapes** | 86+ | ✅ | ✅ | ✅ |
+| **Text boxes** | 3+ | ✅ | ✅ | ✅ |
+| **Theme colors/fonts** | all | ✅ | ✅ | — |
+| **Math equations** | varies | ✅ | ✅ | ✅ |
+| **Charts** | varies | ✅ | — | — |
+| **SmartArt** | varies | ✅ | — | — |
+| **Custom XML** | varies | ✅ | ✅ | ✅ |
+| **SVG images** | ? | ✅ | — | — |
 | **Conformance detection** | n/a | ✅ | n/a | n/a |
 
 ### Remaining Gaps
 
-| Element | Read | Modify | Create |
-|---------|------|--------|--------|
-| **Math equations** | ❌ | ❌ | ❌ |
-| **Charts** | 🔍 | ❌ | ❌ |
-| **SmartArt** | 🔍 | ❌ | ❌ |
-| **Custom XML** | ❌ | ❌ | ❌ |
-| **Text box creation** | n/a | n/a | ❌ |
-| **Bookmark modification** | n/a | ❌ | n/a |
+All primary features have been implemented. Remaining gaps are advanced features:
 
-**Legend**: ✅ Full | ⚠️ Partial | 🔍 Detect only | ❌ None
+| Element | Status | Notes |
+|---------|--------|-------|
+| **Chart data modification** | 🔍 | Can detect and access, cannot modify data |
+| **SmartArt layout modification** | 🔍 | Can detect and access, cannot modify layout |
+| **Track changes creation** | — | Can read and accept/reject, cannot create |
+| **Theme creation** | — | Can read and modify, cannot create from scratch |
+
+**Legend**: ✅ Full | — Not implemented | 🔍 Detect only
 
 ### The Preservation Behavior
 

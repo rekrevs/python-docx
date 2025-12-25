@@ -24,6 +24,14 @@ This document provides a comprehensive overview of the python-docx API, includin
 16. [Theme](#theme)
 17. [Document Properties](#document-properties)
 18. [Pragmatics: Real-World Document Patterns](#pragmatics-real-world-document-patterns)
+19. [Math Equations](#math-equations-wotan-extension)
+20. [Charts](#charts-wotan-extension)
+21. [SmartArt](#smartart-wotan-extension)
+22. [Custom XML](#custom-xml-wotan-extension)
+23. [Floating Shape Modification](#floating-shape-modification-wotan-extension)
+24. [Bookmark Modification](#bookmark-modification-wotan-extension)
+25. [Field Modification](#field-modification-wotan-extension)
+26. [Text Box Creation](#text-box-creation-wotan-extension)
 
 ---
 
@@ -959,25 +967,197 @@ if len(doc.revisions) > 0:
 
 ---
 
+## Math Equations (WOTAN Extension)
+
+Math equations in OOXML use Office Math Markup Language (OMML).
+
+```python
+# Access all equations in document
+for equation in doc.equations:
+    print(equation.xml)  # Raw OMML XML
+
+# Iterate equations in a paragraph
+for eq in para.equations:
+    print(eq)
+
+# Create an equation in a paragraph
+para.add_equation()  # Empty equation
+```
+
+---
+
+## Charts (WOTAN Extension)
+
+Charts are embedded objects that reference chart parts.
+
+```python
+# Access all charts
+charts = doc.charts
+print(f"Total charts: {len(charts)}")
+
+# Iterate charts
+for chart in doc.charts:
+    print(chart.name)
+    print(chart.chart_part)  # The chart part reference
+
+# Note: Chart data modification is not currently supported
+```
+
+---
+
+## SmartArt (WOTAN Extension)
+
+SmartArt diagrams are complex drawing objects.
+
+```python
+# Access all SmartArt
+smartart_objects = doc.smartart_objects
+print(f"Total SmartArt: {len(smartart_objects)}")
+
+# Iterate SmartArt
+for smartart in doc.smartart_objects:
+    print(smartart.name)
+
+# Note: SmartArt layout/content modification is not currently supported
+```
+
+---
+
+## Custom XML (WOTAN Extension)
+
+Custom XML parts store structured data in documents.
+
+```python
+# Access custom XML parts
+for part in doc.custom_xml_parts:
+    print(part.item_id)   # Unique identifier
+    print(part.xml)       # The XML content
+
+# Add custom XML part
+doc.add_custom_xml_part('<root><data>value</data></root>')
+
+# Delete custom XML part
+part.delete()
+```
+
+---
+
+## Floating Shape Modification (WOTAN Extension)
+
+Floating shapes can be modified after creation.
+
+```python
+# Get a floating shape
+shape = doc.floating_shapes[0]
+
+# Resize
+shape.width = Inches(3)
+shape.height = Inches(2)
+
+# Reposition
+shape.pos_x = Inches(1)
+shape.pos_y = Inches(2)
+
+# Rename
+shape.name = "My Picture"
+shape.description = "A scenic view"
+
+# Check/modify z-order
+shape.is_behind_text = True
+
+# Get wrap type
+print(shape.wrap_type)  # 'square', 'tight', 'none', etc.
+
+# Delete
+shape.delete()
+```
+
+---
+
+## Bookmark Modification (WOTAN Extension)
+
+Bookmarks can be renamed or deleted.
+
+```python
+# Get a bookmark
+bookmark = doc.bookmarks.get('MyBookmark')
+
+# Rename
+bookmark.name = "NewBookmarkName"
+
+# Find the end element
+end_elem = bookmark.bookmark_end  # w:bookmarkEnd element
+
+# Check bookmark type
+bookmark.is_toc_entry     # _Toc...
+bookmark.is_reference     # _Ref...
+bookmark.is_hyperlink     # _Hlk...
+bookmark.is_system        # Any underscore prefix
+
+# Delete (removes both start and end elements)
+bookmark.delete()
+```
+
+---
+
+## Field Modification (WOTAN Extension)
+
+Fields can be modified, converted to text, or deleted.
+
+```python
+# Simple field modification
+simple_field = doc.fields.simple[0]
+simple_field.field_code = 'DATE \\@ "yyyy-MM-dd"'  # Change field code
+simple_field.delete()                              # Remove field
+text = simple_field.convert_to_text()             # Convert to static text
+
+# Complex field modification
+complex_field = doc.fields.complex[0]
+complex_field.delete()                             # Remove all field elements
+text = complex_field.convert_to_text()            # Convert to static text
+```
+
+---
+
+## Text Box Creation (WOTAN Extension)
+
+Text boxes can be created programmatically.
+
+```python
+from docx.shared import Inches, Emu
+
+# Create a text box
+text_box = doc.add_text_box(
+    width=Inches(2),
+    height=Inches(1),
+    pos_x=Inches(1),      # Horizontal position
+    pos_y=Inches(2),      # Vertical position
+    wrap_type='square'    # 'none', 'square', 'topAndBottom'
+)
+
+# Add content
+text_box.paragraphs[0].text = "Hello, World!"
+text_box.add_paragraph("Second paragraph")
+```
+
+---
+
 ## Version Information
 
 | Feature | Availability |
 |---------|--------------|
 | Core API (paragraphs, tables, styles) | python-docx upstream |
-| Fields (read) | WOTAN extension |
-| Fields (create) | WOTAN extension |
-| Bookmarks (read) | WOTAN extension |
-| Bookmarks (create) | WOTAN extension |
-| Content Controls (read) | WOTAN extension |
-| Content Controls (create) | WOTAN extension |
-| Footnotes/Endnotes (read) | WOTAN extension |
-| Footnotes/Endnotes (create) | WOTAN extension |
+| Fields (read/modify/create) | WOTAN extension |
+| Bookmarks (read/modify/create) | WOTAN extension |
+| Content Controls (read/modify/create) | WOTAN extension |
+| Footnotes/Endnotes (read/modify/create) | WOTAN extension |
 | Comments | python-docx upstream + WOTAN |
-| Track Changes (read) | WOTAN extension |
-| Track Changes (accept/reject) | WOTAN extension |
-| Text Boxes | WOTAN extension |
-| Floating Shapes (read) | WOTAN extension |
-| Floating Shapes (create) | WOTAN extension |
-| Theme (read) | WOTAN extension |
-| Theme (modify) | WOTAN extension |
+| Track Changes (read/accept/reject) | WOTAN extension |
+| Text Boxes (read/modify/create) | WOTAN extension |
+| Floating Shapes (read/modify/create) | WOTAN extension |
+| Theme (read/modify) | WOTAN extension |
+| Math Equations (read/create) | WOTAN extension |
+| Charts (read) | WOTAN extension |
+| SmartArt (read) | WOTAN extension |
+| Custom XML (read/modify/create) | WOTAN extension |
 | Conformance Detection | WOTAN extension |

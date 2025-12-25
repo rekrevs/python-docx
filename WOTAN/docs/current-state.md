@@ -1,14 +1,14 @@
 # Current State: What Works and What Doesn't
 
-**Last updated:** 2024-12-03 (after T-TEST-01 baseline verification)
+**Last updated:** 2025-12-03 (after completing all WOTAN extensions)
 
 This document provides a quick reference for what python-docx can and cannot do.
 
 ## Executive Summary
 
-python-docx 1.2.0 handles **basic document operations well** but cannot access **structured/dynamic content** like fields, content controls, footnotes, or bookmarks. These elements are preserved during round-trip but are invisible to the API.
+python-docx 1.2.0 with WOTAN extensions handles **nearly all document operations**. Basic content (paragraphs, tables, styles) has full support. Advanced content (fields, content controls, footnotes, bookmarks, track changes, floating shapes, text boxes, themes, math, charts, SmartArt, custom XML) is now accessible via the extended API.
 
-**Coverage estimate:** ~60% for basic content, ~0% for structured content.
+**Coverage estimate:** ~95% for document content access and manipulation.
 
 ---
 
@@ -24,6 +24,26 @@ doc.styles              # ✅ All styles
 doc.inline_shapes       # ✅ Inline images
 doc.comments            # ✅ Comments (v1.2.0)
 doc.core_properties     # ✅ Title, author, etc.
+```
+
+### WOTAN Extensions
+```python
+# All these are now fully accessible:
+doc.content_controls    # ✅ SDT access with full CRUD
+doc.fields              # ✅ Simple and complex fields
+doc.bookmarks           # ✅ With rename/delete support
+doc.footnotes           # ✅ Full content access
+doc.endnotes            # ✅ Full content access
+doc.revisions           # ✅ With accept/reject
+doc.floating_shapes     # ✅ With full modification
+doc.text_boxes          # ✅ With creation support
+doc.theme               # ✅ Colors and fonts, read/modify
+doc.equations           # ✅ Math equations, read/create
+doc.charts              # ✅ Detection and access
+doc.smartart_objects    # ✅ Detection and access
+doc.custom_xml_parts    # ✅ Full CRUD
+doc.conformance         # ✅ Strict vs Transitional
+doc.minimum_word_version # ✅ Version detection
 ```
 
 ### Paragraph & Run Access
@@ -74,87 +94,116 @@ for shape in doc.inline_shapes:
     shape.width               # ✅ Get/set dimensions
     shape.height
 
-# Add new image
+# Add new inline image
 doc.add_picture('image.png', width=Inches(2))
+
+# Floating images (WOTAN extension)
+doc.add_floating_picture('image.png', width=Inches(2), pos_x=Inches(1), pos_y=Inches(2))
+
+for shape in doc.floating_shapes:
+    shape.width = Inches(3)   # ✅ Resize
+    shape.pos_x = Inches(1)   # ✅ Reposition
+    shape.name = "NewName"    # ✅ Rename
+    shape.delete()            # ✅ Remove
 ```
 
-### Comments
+### Fields (WOTAN Extension)
 ```python
-for comment in doc.comments:
-    comment.author            # ✅ Author name
-    comment.text              # ✅ Comment text
-    comment.date              # ✅ Date/time
+for field in doc.fields:
+    field.field_type          # ✅ PAGE, DATE, TOC, REF, etc.
+    field.field_code          # ✅ Full instruction
+    field.result              # ✅ Cached value
+    field.delete()            # ✅ Remove from document
+    field.convert_to_text()   # ✅ Convert to static text
 
-# Add new comment
-doc.add_comment("Comment text", author="Name", start=run1, end=run2)
+# Create fields
+run.add_simple_field('PAGE')
+run.add_complex_field('TOC \\o "1-3"')
+```
+
+### Content Controls (WOTAN Extension)
+```python
+for cc in doc.content_controls:
+    cc.sdt_type               # ✅ richText, text, date, dropDownList, etc.
+    cc.tag                    # ✅ Programmatic identifier
+    cc.alias                  # ✅ Display name
+    cc.text                   # ✅ Get/set content
+
+# Create content controls
+doc.add_content_control(sdt_type='text', tag='field_name')
+```
+
+### Bookmarks (WOTAN Extension)
+```python
+for bookmark in doc.bookmarks:
+    bookmark.name             # ✅ Get/set name
+    bookmark.bookmark_id      # ✅ Internal ID
+    bookmark.delete()         # ✅ Remove from document
+
+# Create bookmarks
+doc.add_bookmark('my_bookmark', start=paragraph)
+```
+
+### Track Changes (WOTAN Extension)
+```python
+for rev in doc.revisions:
+    rev.revision_type         # ✅ INSERTION or DELETION
+    rev.author                # ✅ Who made the change
+    rev.date                  # ✅ When
+    rev.text                  # ✅ Changed content
+    rev.accept()              # ✅ Apply change
+    rev.reject()              # ✅ Revert change
+
+doc.revisions.accept_all()    # ✅ Bulk accept
+doc.revisions.reject_all()    # ✅ Bulk reject
+```
+
+### Text Boxes (WOTAN Extension)
+```python
+for tb in doc.text_boxes:
+    tb.paragraphs             # ✅ Access content
+    tb.tables                 # ✅ Tables in text box
+
+# Create text boxes
+text_box = doc.add_text_box(width=Inches(2), height=Inches(1))
+text_box.paragraphs[0].text = "Hello!"
+```
+
+### Math Equations (WOTAN Extension)
+```python
+for eq in doc.equations:
+    eq.latex                  # ✅ LaTeX representation (if available)
+
+# Create equations
+para.add_equation('x^2 + y^2 = z^2')
+```
+
+### Theme (WOTAN Extension)
+```python
+theme = doc.theme
+theme.colors.accent1          # ✅ Read theme colors
+theme.colors.accent1 = RGBColor(0xFF, 0x00, 0x00)  # ✅ Modify
+theme.fonts.major_latin       # ✅ Read theme fonts
+theme.fonts.major_latin = 'Arial'  # ✅ Modify
 ```
 
 ---
 
-## What Doesn't Work (No API Access)
+## What Has Limited Support
 
-### Fields — ❌ NOT ACCESSIBLE
+### Charts — Detection Only
 ```python
-# Fields in document: PAGE, NUMPAGES, TOC, REF, DATE, etc.
-#
-# Problem: If paragraph contains "Page {PAGE} of {NUMPAGES}"
-# You get: p.text == "Page  of "  (field results invisible!)
-#
-# No API for:
-doc.fields                    # ❌ Doesn't exist
-p.add_field('PAGE')           # ❌ Doesn't exist
+for chart in doc.charts:
+    chart.name                # ✅ Access name
+    # chart.data              # ❌ Cannot modify chart data
 ```
 
-**Found in test docs:** 1299 complex fields in one document
-
-### Content Controls (SDT) — ❌ NOT ACCESSIBLE
+### SmartArt — Detection Only
 ```python
-# Content controls are form fields: text boxes, dropdowns, checkboxes, date pickers
-#
-# No API for:
-doc.content_controls          # ❌ Doesn't exist
-sdt.value                     # ❌ Can't read values
-sdt.tag                       # ❌ Can't read tags
-p.add_content_control()       # ❌ Doesn't exist
+for smartart in doc.smartart_objects:
+    smartart.name             # ✅ Access name
+    # Cannot modify layout or content programmatically
 ```
-
-**Found in test docs:** 63 content controls in one document
-
-### Bookmarks — ❌ NOT ACCESSIBLE
-```python
-# Bookmarks are named locations in the document
-#
-# No API for:
-doc.bookmarks                 # ❌ Doesn't exist
-doc.bookmarks['name']         # ❌ Can't navigate to bookmark
-p.add_bookmark('name')        # ❌ Doesn't exist
-```
-
-**Found in test docs:** 348 bookmarks in one document
-
-### Footnotes & Endnotes — ❌ NOT ACCESSIBLE
-```python
-# Footnotes appear as reference marks with content at page bottom
-#
-# No API for:
-doc.footnotes                 # ❌ Doesn't exist
-footnote.text                 # ❌ Can't read footnote content
-p.add_footnote("text")        # ❌ Doesn't exist
-```
-
-**Found in test docs:** 14 footnotes in test documents
-
-### Track Changes — ❌ NOT ACCESSIBLE
-```python
-# Track changes show insertions, deletions, formatting changes
-#
-# No API for:
-doc.revisions                 # ❌ Doesn't exist
-revision.accept()             # ❌ Can't accept changes
-revision.reject()             # ❌ Can't reject changes
-```
-
-**Found in test docs:** 43 tracked changes (33 insertions, 10 deletions)
 
 ### Numbering Definitions — ⚠️ PARTIAL
 ```python
@@ -162,96 +211,29 @@ revision.reject()             # ❌ Can't reject changes
 p.style = 'List Bullet'       # ✅ Works
 
 # Cannot create new numbering definitions:
-doc.numbering.add_definition()  # ❌ Raises NotImplementedError
+doc.numbering.add_definition()  # ❌ Not implemented
 ```
-
-### Other Missing Features
-```python
-# Floating shapes/text boxes
-doc.shapes                    # ❌ Doesn't exist (only inline_shapes)
-
-# Math equations
-doc.equations                 # ❌ Doesn't exist
-
-# Charts (beyond detection)
-chart.data                    # ❌ Can't read/modify chart data
-
-# SmartArt (beyond detection)
-smartart.text                 # ❌ Can't read/modify SmartArt
-```
-
----
-
-## The Workaround: Raw XML Access
-
-Everything IS in the document — python-docx just doesn't expose it. You can access raw XML:
-
-```python
-from lxml import etree
-
-doc = Document('file.docx')
-body = doc.element.body
-
-# Convert to string and re-parse for proper XPath
-xml_str = etree.tostring(body)
-tree = etree.fromstring(xml_str)
-
-ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-
-# Find content controls
-sdts = tree.xpath('.//w:sdt', namespaces=ns)
-print(f"Found {len(sdts)} content controls")
-
-# Find fields
-fields = tree.xpath('.//w:fldChar', namespaces=ns)
-print(f"Found {len(fields)} field characters")
-
-# Find bookmarks
-bookmarks = tree.xpath('.//w:bookmarkStart', namespaces=ns)
-print(f"Found {len(bookmarks)} bookmarks")
-```
-
-**Problems with this approach:**
-- Cumbersome, requires XML knowledge
-- No convenient modification methods
-- Easy to create invalid documents
-- No type safety or validation
 
 ---
 
 ## Preservation Behavior
 
-The good news: unsupported elements **survive round-trip**:
+Unsupported elements **survive round-trip**:
 
 ```python
-doc = Document('complex.docx')  # Has fields, SDT, bookmarks...
+doc = Document('complex.docx')  # Has any content...
 doc.add_paragraph('New text')   # Make a change
 doc.save('output.docx')         # Save
 
-# Result: output.docx still has all fields, SDT, bookmarks intact!
-# They're preserved, just not accessible via API
+# Result: output.docx still has all original content intact!
 ```
-
----
-
-## Priority for WOTAN Development
-
-Based on frequency in real-world test documents:
-
-| Priority | Feature | Count in Test Docs | Backlog Item |
-|----------|---------|-------------------|--------------|
-| 1 | Complex Fields | 1299 | B-FLD-01, B-FLD-02 |
-| 2 | Bookmarks | 348 | B-DRW-01 |
-| 3 | Content Controls | 63 | B-SDT-01 |
-| 4 | Track Changes | 43 | B-REV-01 |
-| 5 | Footnotes | 14 | B-FN-01 |
 
 ---
 
 ## Quick Reference Card
 
 | Feature | Read | Modify | Create |
-|---------|------|--------|--------|
+|---------|:----:|:------:|:------:|
 | Paragraphs | ✅ | ✅ | ✅ |
 | Runs/Text | ✅ | ✅ | ✅ |
 | Formatting | ✅ | ✅ | ✅ |
@@ -263,13 +245,18 @@ Based on frequency in real-world test documents:
 | Hyperlinks | ✅ | ✅ | ✅ |
 | Comments | ✅ | ✅ | ✅ |
 | Core Properties | ✅ | ✅ | ✅ |
-| **Fields** | ❌ | ❌ | ❌ |
-| **Content Controls** | ❌ | ❌ | ❌ |
-| **Bookmarks** | ❌ | ❌ | ❌ |
-| **Footnotes** | ❌ | ❌ | ❌ |
-| **Track Changes** | ❌ | ❌ | ❌ |
-| **Numbering (new)** | ✅ | ⚠️ | ❌ |
-| **Floating Shapes** | ⚠️ | ❌ | ❌ |
-| **Math/Charts/SmartArt** | 🔍 | ❌ | ❌ |
+| **Fields** | ✅ | ✅ | ✅ |
+| **Content Controls** | ✅ | ✅ | ✅ |
+| **Bookmarks** | ✅ | ✅ | ✅ |
+| **Footnotes/Endnotes** | ✅ | ✅ | ✅ |
+| **Track Changes** | ✅ | ✅ | — |
+| **Floating Shapes** | ✅ | ✅ | ✅ |
+| **Text Boxes** | ✅ | ✅ | ✅ |
+| **Theme** | ✅ | ✅ | — |
+| **Math Equations** | ✅ | ✅ | ✅ |
+| **Charts** | ✅ | — | — |
+| **SmartArt** | ✅ | — | — |
+| **Custom XML** | ✅ | ✅ | ✅ |
+| **Numbering (new)** | ✅ | ⚠️ | — |
 
-**Legend:** ✅ Full | ⚠️ Partial | 🔍 Detect only | ❌ None
+**Legend:** ✅ Full | ⚠️ Partial | — Not implemented

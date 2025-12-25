@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Dict
 
 nsmap = {
+    # Custom XML namespace
+    "ds": "http://schemas.openxmlformats.org/officeDocument/2006/customXml",
     # DrawingML namespaces
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
     "a14": "http://schemas.microsoft.com/office/drawing/2010/main",
@@ -21,6 +23,7 @@ nsmap = {
     "mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
     # Office namespaces
     "m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
+    "o": "urn:schemas-microsoft-com:office:office",
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
     "sl": "http://schemas.openxmlformats.org/schemaLibrary/2006/main",
     # VML namespace (for mc:Fallback content)

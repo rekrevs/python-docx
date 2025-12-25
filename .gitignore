@@ -9,4 +9,5 @@ _scratch/
 Session.vim
 /.tox/
 .DS_Store
-WOTAN/example-docs/
+wotan/example-docs/
+.claude/settings.local.json

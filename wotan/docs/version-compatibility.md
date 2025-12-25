@@ -1,6 +1,6 @@
 # OOXML Version Compatibility Guide
 
-**Last updated:** 2024-12-03 (T-TEST-02 research)
+**Last updated:** 2024-12-03 (T-0002 research)
 
 This document covers OOXML versioning, Word version differences, and how to handle version compatibility in python-docx extensions.
 

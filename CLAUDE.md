@@ -65,12 +65,6 @@ pyright                             # Type checking
 ruff check                          # Linting
 ruff check --fix                    # Auto-fix lint issues
 
-# Task management
-/wotan                              # Show active tasks
-/wotan add "description"            # Create task
-/wotan start                        # Execute next task
-```
-
 ## Test Style
 
 - Pytest with descriptive names: `it_does_something`, `its_property_returns_expected`

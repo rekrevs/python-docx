@@ -13,6 +13,7 @@ from docx.oxml.parser import parse_xml
 from docx.oxml.simpletypes import (
     ST_HexColor,
     ST_HpsMeasure,
+    ST_SignedHpsMeasure,
     ST_String,
     ST_VerticalAlignRun,
 )
@@ -26,6 +27,7 @@ from docx.shared import RGBColor
 
 if TYPE_CHECKING:
     from docx.oxml.shared import CT_OnOff, CT_String
+    from docx.oxml.text.parfmt import CT_Spacing
     from docx.shared import Length
 
 
@@ -58,20 +60,32 @@ class CT_HpsMeasure(BaseOxmlElement):
     val: Length = RequiredAttribute("w:val", ST_HpsMeasure)
 
 
+class CT_SignedHpsMeasure(BaseOxmlElement):
+    """Used for `<w:position>` element, specifying vertical position in signed half-points."""
+
+    val: Length = RequiredAttribute("w:val", ST_SignedHpsMeasure)
+
+
 class CT_RPr(BaseOxmlElement):
     """`<w:rPr>` element, containing the properties for a run."""
 
     get_or_add_color: Callable[[], CT_Color]
     get_or_add_highlight: Callable[[], CT_Highlight]
+    get_or_add_kern: Callable[[], CT_HpsMeasure]
+    get_or_add_position: Callable[[], CT_SignedHpsMeasure]
     get_or_add_rFonts: Callable[[], CT_Fonts]
+    get_or_add_spacing: Callable[[], CT_Spacing]
     get_or_add_sz: Callable[[], CT_HpsMeasure]
     get_or_add_vertAlign: Callable[[], CT_VerticalAlignRun]
     _add_rStyle: Callable[..., CT_String]
     _add_u: Callable[[], CT_Underline]
     _remove_color: Callable[[], None]
     _remove_highlight: Callable[[], None]
+    _remove_kern: Callable[[], None]
+    _remove_position: Callable[[], None]
     _remove_rFonts: Callable[[], None]
     _remove_rStyle: Callable[[], None]
+    _remove_spacing: Callable[[], None]
     _remove_sz: Callable[[], None]
     _remove_u: Callable[[], None]
     _remove_vertAlign: Callable[[], None]
@@ -136,6 +150,9 @@ class CT_RPr(BaseOxmlElement):
     vanish = ZeroOrOne("w:vanish", successors=_tag_seq[17:])
     webHidden = ZeroOrOne("w:webHidden", successors=_tag_seq[18:])
     color: CT_Color | None = ZeroOrOne("w:color", successors=_tag_seq[19:])
+    spacing: CT_Spacing | None = ZeroOrOne("w:spacing", successors=_tag_seq[20:])
+    kern: CT_HpsMeasure | None = ZeroOrOne("w:kern", successors=_tag_seq[22:])
+    position: CT_SignedHpsMeasure | None = ZeroOrOne("w:position", successors=_tag_seq[23:])
     sz: CT_HpsMeasure | None = ZeroOrOne("w:sz", successors=_tag_seq[24:])
     highlight: CT_Highlight | None = ZeroOrOne("w:highlight", successors=_tag_seq[26:])
     u: CT_Underline | None = ZeroOrOne("w:u", successors=_tag_seq[27:])
@@ -269,6 +286,54 @@ class CT_RPr(BaseOxmlElement):
         # -- assert bool(value) is False --
         elif self.vertAlign is not None and self.vertAlign.val == ST_VerticalAlignRun.SUPERSCRIPT:
             self._remove_vertAlign()
+
+    @property
+    def kern_val(self) -> Length | None:
+        """The value of `w:kern/@w:val` or |None| if not present."""
+        kern = self.kern
+        if kern is None:
+            return None
+        return kern.val
+
+    @kern_val.setter
+    def kern_val(self, value: Length | None):
+        if value is None:
+            self._remove_kern()
+            return
+        kern = self.get_or_add_kern()
+        kern.val = value
+
+    @property
+    def position_val(self) -> Length | None:
+        """The value of `w:position/@w:val` or |None| if not present."""
+        position = self.position
+        if position is None:
+            return None
+        return position.val
+
+    @position_val.setter
+    def position_val(self, value: Length | None):
+        if value is None:
+            self._remove_position()
+            return
+        position = self.get_or_add_position()
+        position.val = value
+
+    @property
+    def spacing_val(self) -> Length | None:
+        """The value of `w:spacing/@w:val` or |None| if not present."""
+        spacing = self.spacing
+        if spacing is None:
+            return None
+        return spacing.val
+
+    @spacing_val.setter
+    def spacing_val(self, value: Length | None):
+        if value is None:
+            self._remove_spacing()
+            return
+        spacing = self.get_or_add_spacing()
+        spacing.val = value
 
     @property
     def sz_val(self) -> Length | None:

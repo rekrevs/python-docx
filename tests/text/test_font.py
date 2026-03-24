@@ -12,7 +12,7 @@ from _pytest.fixtures import FixtureRequest
 from docx.dml.color import ColorFormat
 from docx.enum.text import WD_COLOR, WD_UNDERLINE
 from docx.oxml.text.run import CT_R
-from docx.shared import Length, Pt
+from docx.shared import Length, Pt, Twips
 from docx.text.font import Font
 
 from ..unitutil.cxml import element, xml
@@ -99,6 +99,102 @@ class DescribeFont:
         expected_xml = xml(expected_r_cxml)
 
         font.size = value
+
+        assert font._element.xml == expected_xml
+
+    @pytest.mark.parametrize(
+        ("r_cxml", "expected_value"),
+        [
+            ("w:r", None),
+            ("w:r/w:rPr", None),
+            ("w:r/w:rPr/w:spacing{w:val=40}", Twips(40)),
+            ("w:r/w:rPr/w:spacing{w:val=-20}", Twips(-20)),
+        ],
+    )
+    def it_knows_its_spacing(self, r_cxml: str, expected_value: Length | None):
+        r = cast(CT_R, element(r_cxml))
+        font = Font(r)
+        assert font.spacing == expected_value
+
+    @pytest.mark.parametrize(
+        ("r_cxml", "value", "expected_r_cxml"),
+        [
+            ("w:r", Pt(2), "w:r/w:rPr/w:spacing{w:val=40}"),
+            ("w:r/w:rPr", Pt(1), "w:r/w:rPr/w:spacing{w:val=20}"),
+            ("w:r/w:rPr/w:spacing{w:val=40}", Pt(3), "w:r/w:rPr/w:spacing{w:val=60}"),
+            ("w:r/w:rPr/w:spacing{w:val=40}", None, "w:r/w:rPr"),
+        ],
+    )
+    def it_can_change_its_spacing(self, r_cxml: str, value: Length | None, expected_r_cxml: str):
+        r = cast(CT_R, element(r_cxml))
+        font = Font(r)
+        expected_xml = xml(expected_r_cxml)
+
+        font.spacing = value
+
+        assert font._element.xml == expected_xml
+
+    @pytest.mark.parametrize(
+        ("r_cxml", "expected_value"),
+        [
+            ("w:r", None),
+            ("w:r/w:rPr", None),
+            ("w:r/w:rPr/w:kern{w:val=24}", Pt(12)),
+            ("w:r/w:rPr/w:kern{w:val=32}", Pt(16)),
+        ],
+    )
+    def it_knows_its_kern(self, r_cxml: str, expected_value: Length | None):
+        r = cast(CT_R, element(r_cxml))
+        font = Font(r)
+        assert font.kern == expected_value
+
+    @pytest.mark.parametrize(
+        ("r_cxml", "value", "expected_r_cxml"),
+        [
+            ("w:r", Pt(12), "w:r/w:rPr/w:kern{w:val=24}"),
+            ("w:r/w:rPr", Pt(16), "w:r/w:rPr/w:kern{w:val=32}"),
+            ("w:r/w:rPr/w:kern{w:val=24}", Pt(8), "w:r/w:rPr/w:kern{w:val=16}"),
+            ("w:r/w:rPr/w:kern{w:val=24}", None, "w:r/w:rPr"),
+        ],
+    )
+    def it_can_change_its_kern(self, r_cxml: str, value: Length | None, expected_r_cxml: str):
+        r = cast(CT_R, element(r_cxml))
+        font = Font(r)
+        expected_xml = xml(expected_r_cxml)
+
+        font.kern = value
+
+        assert font._element.xml == expected_xml
+
+    @pytest.mark.parametrize(
+        ("r_cxml", "expected_value"),
+        [
+            ("w:r", None),
+            ("w:r/w:rPr", None),
+            ("w:r/w:rPr/w:position{w:val=6}", Pt(3)),
+            ("w:r/w:rPr/w:position{w:val=-4}", Pt(-2)),
+        ],
+    )
+    def it_knows_its_position(self, r_cxml: str, expected_value: Length | None):
+        r = cast(CT_R, element(r_cxml))
+        font = Font(r)
+        assert font.position == expected_value
+
+    @pytest.mark.parametrize(
+        ("r_cxml", "value", "expected_r_cxml"),
+        [
+            ("w:r", Pt(3), "w:r/w:rPr/w:position{w:val=6}"),
+            ("w:r/w:rPr", Pt(5), "w:r/w:rPr/w:position{w:val=10}"),
+            ("w:r/w:rPr/w:position{w:val=6}", Pt(2), "w:r/w:rPr/w:position{w:val=4}"),
+            ("w:r/w:rPr/w:position{w:val=6}", None, "w:r/w:rPr"),
+        ],
+    )
+    def it_can_change_its_position(self, r_cxml: str, value: Length | None, expected_r_cxml: str):
+        r = cast(CT_R, element(r_cxml))
+        font = Font(r)
+        expected_xml = xml(expected_r_cxml)
+
+        font.position = value
 
         assert font._element.xml == expected_xml
 

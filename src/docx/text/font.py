@@ -157,6 +157,24 @@ class Font(ElementProxy):
         self._set_bool_prop("i", value)
 
     @property
+    def kern(self) -> Length | None:
+        """The kerning threshold for this |Font| as a |Length| value.
+
+        Specifies the minimum font size at which kerning is applied. |None| indicates
+        the kerning threshold is inherited from the style hierarchy. Assigning |None|
+        removes any directly-applied kerning threshold.
+        """
+        rPr = self._element.rPr
+        if rPr is None:
+            return None
+        return rPr.kern_val
+
+    @kern.setter
+    def kern(self, value: int | Length | None) -> None:
+        rPr = self._element.get_or_add_rPr()
+        rPr.kern_val = None if value is None else Emu(value)
+
+    @property
     def imprint(self) -> bool | None:
         """Read/write tri-state value.
 
@@ -227,6 +245,32 @@ class Font(ElementProxy):
         self._set_bool_prop("outline", value)
 
     @property
+    def position(self) -> Length | None:
+        """Vertical position adjustment (raise/lower) as a |Length| value.
+
+        A positive value raises the text; a negative value lowers it. |None| indicates
+        the position is inherited from the style hierarchy. Assigning |None| removes
+        any directly-applied position adjustment.
+
+        The value is specified in half-points in the XML but is converted to EMU for
+        consistency with other length properties::
+
+            >>> font.position = Pt(3)
+            >>> font.position.pt
+            3.0
+
+        """
+        rPr = self._element.rPr
+        if rPr is None:
+            return None
+        return rPr.position_val
+
+    @position.setter
+    def position(self, value: int | Length | None) -> None:
+        rPr = self._element.get_or_add_rPr()
+        rPr.position_val = None if value is None else Emu(value)
+
+    @property
     def rtl(self) -> bool | None:
         """Read/write tri-state value.
 
@@ -276,6 +320,32 @@ class Font(ElementProxy):
     def size(self, emu: int | Length | None) -> None:
         rPr = self._element.get_or_add_rPr()
         rPr.sz_val = None if emu is None else Emu(emu)
+
+    @property
+    def spacing(self) -> Length | None:
+        """Character spacing adjustment as a |Length| value.
+
+        A positive value expands the spacing between characters; a negative value
+        condenses it. |None| indicates the spacing is inherited from the style
+        hierarchy. Assigning |None| removes any directly-applied spacing adjustment.
+
+        The value is specified in twips (1/20 point) in the XML but is converted to EMU
+        for consistency with other length properties::
+
+            >>> font.spacing = Pt(2)
+            >>> font.spacing.pt
+            2.0
+
+        """
+        rPr = self._element.rPr
+        if rPr is None:
+            return None
+        return rPr.spacing_val
+
+    @spacing.setter
+    def spacing(self, value: int | Length | None) -> None:
+        rPr = self._element.get_or_add_rPr()
+        rPr.spacing_val = None if value is None else Emu(value)
 
     @property
     def small_caps(self) -> bool | None:

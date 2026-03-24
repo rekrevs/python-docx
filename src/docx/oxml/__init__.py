@@ -261,6 +261,7 @@ from .text.font import (
     CT_Highlight,
     CT_HpsMeasure,
     CT_RPr,
+    CT_SignedHpsMeasure,
     CT_Underline,
     CT_VerticalAlignRun,
 )
@@ -276,9 +277,11 @@ register_element_cls("w:highlight", CT_Highlight)
 register_element_cls("w:i", CT_OnOff)
 register_element_cls("w:iCs", CT_OnOff)
 register_element_cls("w:imprint", CT_OnOff)
+register_element_cls("w:kern", CT_HpsMeasure)
 register_element_cls("w:noProof", CT_OnOff)
 register_element_cls("w:oMath", CT_OnOff)
 register_element_cls("w:outline", CT_OnOff)
+register_element_cls("w:position", CT_SignedHpsMeasure)
 register_element_cls("w:rFonts", CT_Fonts)
 register_element_cls("w:rPr", CT_RPr)
 register_element_cls("w:rStyle", CT_String)

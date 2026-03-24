@@ -358,6 +358,22 @@ class ST_RelationshipId(XsdString):
     pass
 
 
+class ST_SignedHpsMeasure(XsdInt):
+    """Signed half-point measure, e.g. 6 represents 3.0 points, -4 represents -2.0 points."""
+
+    @classmethod
+    def convert_from_xml(cls, str_value: str) -> Length:
+        if "m" in str_value or "n" in str_value or "p" in str_value:
+            return ST_UniversalMeasure.convert_from_xml(str_value)
+        return Pt(int(str_value) / 2.0)
+
+    @classmethod
+    def convert_to_xml(cls, value: int | Length) -> str:
+        emu = Emu(value)
+        half_points = int(emu.pt * 2)
+        return str(half_points)
+
+
 class ST_SignedTwipsMeasure(XsdInt):
     @classmethod
     def convert_from_xml(cls, str_value: str) -> Length:

@@ -35,8 +35,10 @@ nsmap = {
     "w16": "http://schemas.microsoft.com/office/word/2018/wordml",
     "w16cex": "http://schemas.microsoft.com/office/word/2020/wordml/cex",
     "w16cid": "http://schemas.microsoft.com/office/word/2016/wordml/cid",
+    "w16du": "http://schemas.microsoft.com/office/word/2023/wordml/word16du",
     "w16sdtdh": "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
     "w16se": "http://schemas.microsoft.com/office/word/2015/wordml/symex",
+    "w16sfl": "http://schemas.microsoft.com/office/word/2024/wordml/sdtformatlock",
     "wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
     "wp14": "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing",
     # WordprocessingML Shape namespaces (for text boxes)

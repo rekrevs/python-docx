@@ -20,14 +20,16 @@ This document captures the comprehensive analysis of what python-docx currently 
 | Prefix | URI | Word Version | python-docx |
 |--------|-----|--------------|-------------|
 | `w` | `.../wordprocessingml/2006/main` | All | Supported |
-| `w14` | `.../word/2010/wordml` | 2010 | Defined, minimal use |
-| `w15` | `.../word/2012/wordml` | 2013 | Not defined |
-| `w16` | `.../word/2018/wordml` | 2018 | Not defined |
-| `w16se` | `.../word/2015/wordml/symex` | 2015 | Not defined |
-| `w16cid` | `.../word/2016/wordml/cid` | 2016 | Not defined |
-| `w16cex` | `.../word/2018/wordml/cex` | 2018 | Not defined |
-| `w16sdtdh` | `.../word/2020/wordml/sdtdatahash` | 2020 | Not defined |
-| `wp14` | `.../word/2010/wordprocessingDrawing` | 2010 | Not defined |
+| `w14` | `.../word/2010/wordml` | 2010 | Defined |
+| `w15` | `.../word/2012/wordml` | 2013 | Defined |
+| `w16` | `.../word/2018/wordml` | 2018 | Defined |
+| `w16se` | `.../word/2015/wordml/symex` | 2015 | Defined |
+| `w16cid` | `.../word/2016/wordml/cid` | 2016 | Defined |
+| `w16cex` | `.../word/2018/wordml/cex` | 2018 | Defined |
+| `w16sdtdh` | `.../word/2020/wordml/sdtdatahash` | 2020 | Defined |
+| `w16du` | `.../word/2023/wordml/word16du` | 2023 | Defined (T-0015) |
+| `w16sfl` | `.../word/2024/wordml/sdtformatlock` | 2024 | Defined (T-0015) |
+| `wp14` | `.../word/2010/wordprocessingDrawing` | 2010 | Defined |
 
 ---
 

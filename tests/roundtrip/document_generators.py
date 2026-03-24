@@ -353,6 +353,91 @@ def create_long_document() -> Document:
     return doc
 
 
+def create_numbering_document() -> Document:
+    """Create a document with programmatically-defined bullet and numbered lists.
+
+    This exercises the numbering creation API: creating abstract numbering definitions,
+    adding levels, creating num instances, and applying numbering to paragraphs.
+    """
+    doc = Document()
+
+    doc.add_heading("Test Document - Custom Numbering", 0)
+
+    numbering_part = doc.part.numbering_part
+
+    # --- Bullet list ---
+    an_bullet = numbering_part.add_abstract_num("singleLevel")
+    an_bullet.add_lvl(
+        ilvl=0,
+        num_fmt="bullet",
+        lvl_text="\uF0B7",
+        indent_left=720,
+        indent_hanging=360,
+        font_name="Symbol",
+    )
+    num_bullet = numbering_part.add_num(an_bullet.abstractNumId)
+
+    doc.add_heading("Bullet List", 1)
+    for text in ["First bullet item", "Second bullet item", "Third bullet item"]:
+        p = doc.add_paragraph(text)
+        pPr = p._element.get_or_add_pPr()
+        numPr = pPr.get_or_add_numPr()
+        numPr.get_or_add_numId().val = num_bullet.numId
+        numPr.get_or_add_ilvl().val = 0
+
+    # --- Decimal numbered list ---
+    an_decimal = numbering_part.add_abstract_num("singleLevel")
+    an_decimal.add_lvl(
+        ilvl=0,
+        num_fmt="decimal",
+        lvl_text="%1.",
+        indent_left=720,
+        indent_hanging=360,
+    )
+    num_decimal = numbering_part.add_num(an_decimal.abstractNumId)
+
+    doc.add_heading("Numbered List", 1)
+    for text in ["First numbered item", "Second numbered item", "Third numbered item"]:
+        p = doc.add_paragraph(text)
+        pPr = p._element.get_or_add_pPr()
+        numPr = pPr.get_or_add_numPr()
+        numPr.get_or_add_numId().val = num_decimal.numId
+        numPr.get_or_add_ilvl().val = 0
+
+    # --- Multi-level list ---
+    an_multi = numbering_part.add_abstract_num("multiLevel")
+    an_multi.add_lvl(
+        ilvl=0, num_fmt="decimal", lvl_text="%1.",
+        indent_left=720, indent_hanging=360,
+    )
+    an_multi.add_lvl(
+        ilvl=1, num_fmt="lowerLetter", lvl_text="%2.",
+        indent_left=1440, indent_hanging=360,
+    )
+    an_multi.add_lvl(
+        ilvl=2, num_fmt="lowerRoman", lvl_text="%3.",
+        indent_left=2160, indent_hanging=360,
+    )
+    num_multi = numbering_part.add_num(an_multi.abstractNumId)
+
+    doc.add_heading("Multi-Level List", 1)
+    items = [
+        (0, "Top level item"),
+        (1, "Sub-item a"),
+        (1, "Sub-item b"),
+        (2, "Sub-sub-item i"),
+        (0, "Another top level"),
+    ]
+    for ilvl, text in items:
+        p = doc.add_paragraph(text)
+        pPr = p._element.get_or_add_pPr()
+        numPr = pPr.get_or_add_numPr()
+        numPr.get_or_add_numId().val = num_multi.numId
+        numPr.get_or_add_ilvl().val = ilvl
+
+    return doc
+
+
 # Dictionary of all generators for easy access
 DOCUMENT_GENERATORS = {
     "basic": create_basic_document,
@@ -365,4 +450,5 @@ DOCUMENT_GENERATORS = {
     "mixed_content": create_mixed_content_document,
     "unicode": create_unicode_document,
     "long_document": create_long_document,
+    "numbering": create_numbering_document,
 }

@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ..opc.packuri import PackURI
 from ..opc.part import XmlPart
 from ..shared import lazyproperty
+
+if TYPE_CHECKING:
+    from ..oxml.numbering import CT_AbstractNum, CT_Num, CT_Numbering
 
 
 class NumberingPart(XmlPart):
@@ -69,6 +74,36 @@ class NumberingPart(XmlPart):
         content_type = CT.WML_NUMBERING
 
         return cls(partname, content_type, element, package=None)
+
+    @property
+    def numbering_elm(self) -> CT_Numbering:
+        """The `w:numbering` root element of this numbering part."""
+        return self._element  # type: ignore[return-value]
+
+    def add_abstract_num(
+        self,
+        multi_level_type: str = "hybridMultilevel",
+    ) -> CT_AbstractNum:
+        """Add a new abstract numbering definition and return it.
+
+        Args:
+            multi_level_type: One of "singleLevel", "multiLevel", "hybridMultilevel".
+
+        Returns:
+            The newly created CT_AbstractNum element.
+        """
+        return self.numbering_elm.add_abstractNum(multi_level_type)
+
+    def add_num(self, abstract_num_id: int) -> CT_Num:
+        """Add a new `w:num` element referencing `abstract_num_id` and return it.
+
+        Args:
+            abstract_num_id: The abstractNumId of the abstract definition to reference.
+
+        Returns:
+            The newly created CT_Num element with an auto-assigned numId.
+        """
+        return self.numbering_elm.add_num(abstract_num_id)
 
     @lazyproperty
     def numbering_definitions(self):
